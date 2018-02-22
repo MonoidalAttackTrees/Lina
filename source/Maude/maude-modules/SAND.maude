@@ -6,8 +6,8 @@ sorts Formula .
 subsort Nat < Formula .
 
 op _||_  : Formula Formula -> Formula [assoc comm] .
-op _._ : Formula Formula -> Formula [assoc comm] .
-op _;_  : Formula Formula -> Formula [assoc] .
+op _._ : Formula Formula -> Formula [assoc comm prec 50] .
+op _;_  : Formula Formula -> Formula [assoc prec 51] .
 
 var P Q R S : Formula .
 

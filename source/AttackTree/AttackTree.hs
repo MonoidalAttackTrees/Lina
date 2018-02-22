@@ -2,14 +2,16 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE UndecidableInstances #-}
 module AttackTree.AttackTree (
-   AttackTree(..),
    PAttackTree(..),
+   AttackTree(..),
    module AttackTree.Configuration,
-   start,
+   ID,
+   start_PAT,
+   start_AT,
    base,
-   and,
-   or,
-   seq) where
+   and_node,
+   or_node,
+   seq_node) where
 
 import Prelude hiding (or, and, seq)
 import Control.Monad.State
@@ -23,132 +25,132 @@ data ATOps c where
 
 type ID = Integer
 
-data AttackTree cost label where
+data PAttackTree cost label where
     Base :: ID
          -> cost
          -> label
-         -> AttackTree cost label
+         -> PAttackTree cost label
             
-    OR :: ATOps cost
+    OR :: ID
        -> label
-       -> AttackTree cost label
-       -> AttackTree cost label
-       -> AttackTree cost label
+       -> PAttackTree cost label
+       -> PAttackTree cost label
+       -> PAttackTree cost label
 
-    AND :: ATOps cost
+    AND :: ID
         -> label
-        -> AttackTree cost label
-        -> AttackTree cost label
-        -> AttackTree cost label
+        -> PAttackTree cost label
+        -> PAttackTree cost label
+        -> PAttackTree cost label
 
-    SEQ :: ATOps cost
+    SEQ :: ID
         -> label
-        -> AttackTree cost label
-        -> AttackTree cost label
-        -> AttackTree cost label
+        -> PAttackTree cost label
+        -> PAttackTree cost label
+        -> PAttackTree cost label
 
+data AttackTree cost label = AttackTree {      
+      conf   :: Conf cost,
+      pATree :: PAttackTree cost label
+}
+           
 data Node = ORNode | ANDNode | SEQNode
 
-foldrAT :: (Node -> ATOps cost -> label -> b -> b -> b)
+foldrPAT :: (ID -> Node -> label -> b -> b -> b)
         -> (ID -> cost -> label -> b)
-        -> AttackTree cost label
+        -> PAttackTree cost label
         -> b
-foldrAT f b (Base id c l) = b id c l
-foldrAT f b (OR op l atl atr) = f ORNode op l (foldrAT f b atl) (foldrAT f b atr)
-foldrAT f b (AND op l atl atr) = f ANDNode op l (foldrAT f b atl) (foldrAT f b atr)
-foldrAT f b (SEQ op l atl atr) = f SEQNode op l (foldrAT f b atl) (foldrAT f b atr)
-
-validAT :: AttackTree cost label -> Bool
-validAT = foldrAT f (\_ -> \_ -> \_ -> True) 
- where
-   f ORNode (OROp op) _ vl vr = vl && vr
-   f ANDNode (ANDOp op) _ vl vr = vl && vr
-   f SEQNode (SEQOp op) _ vl vr = vl && vr
-   f _ _ _ _ _= False
+foldrPAT f b (Base id c l) = b id c l
+foldrPAT f b (OR id l atl atr) = f id ORNode l (foldrPAT f b atl) (foldrPAT f b atr)
+foldrPAT f b (AND id l atl atr) = f id ANDNode l (foldrPAT f b atl) (foldrPAT f b atr)
+foldrPAT f b (SEQ id l atl atr) = f id SEQNode l (foldrPAT f b atl) (foldrPAT f b atr)
                                      
-showNode :: Show label => Int -> String -> label -> String -> String -> String
-showNode i node l atl atr = node++"("++(show l)++")\n"
-                         ++ tabs++"("++atl++")\n"
-                         ++ tabs++"("++atr++")"
+showNode :: Show label => Int -> ID -> String -> label -> String -> String -> String
+showNode i id node l atl atr = node++"("++(show id)++","++(show l)++")\n"
+                            ++ tabs++"("++atl++")\n"
+                            ++ tabs++"("++atr++")"
  where
    tabs = take i $ repeat '\t'
 
-showAT :: (Show cost, Show label) => AttackTree cost label -> String
-showAT = showAT' 1
+showPAT :: (Show cost, Show label) => PAttackTree cost label -> String
+showPAT = showPAT' 1
          
-showAT' :: (Show cost, Show label) => Int -> AttackTree cost label -> String
-showAT' i (Base id c l)        = show (id,l,c)
-showAT' i (OR _ l atl atr)  = showNode i "OR"  l (showAT' (i+1) atl) (showAT' (i+1) atr)
-showAT' i (AND _ l atl atr) = showNode i "AND" l (showAT' (i+1) atl) (showAT' (i+1) atr)
-showAT' i (SEQ _ l atl atr) = showNode i "SEQ" l (showAT' (i+1) atl) (showAT' (i+1) atr)
+showPAT' :: (Show cost, Show label) => Int -> PAttackTree cost label -> String
+showPAT' i (Base id c l)      = show (id,l,c)
+showPAT' i (OR  id l atl atr) = showNode i id "OR"  l (showPAT' (i+1) atl) (showPAT' (i+1) atr)
+showPAT' i (AND id l atl atr) = showNode i id "AND" l (showPAT' (i+1) atl) (showPAT' (i+1) atr)
+showPAT' i (SEQ id l atl atr) = showNode i id "SEQ" l (showPAT' (i+1) atl) (showPAT' (i+1) atr)
+
+instance (Show cost, Show label) => Show (PAttackTree cost label) where
+    show = showPAT
 
 instance (Show cost, Show label) => Show (AttackTree cost label) where
-    show t = showAT t
+    show at = showPAT $ pATree at
              
-data PAttackTree cost label where
-    IBase :: cost
-          -> label
-          -> PAttackTree cost label
-            
-    IOR :: label
-        -> PAttackTree cost label
-        -> PAttackTree cost label
-        -> PAttackTree cost label
-
-    IAND :: label
-         -> PAttackTree cost label
-         -> PAttackTree cost label
-         -> PAttackTree cost label
-
-    ISEQ :: label
-         -> PAttackTree cost label
-         -> PAttackTree cost label
-         -> PAttackTree cost label
- deriving Show
-
-foldrPAT :: (Node -> label -> b -> b -> b)
-        -> (cost -> label -> b)
-        -> PAttackTree cost label
-        -> b
-foldrPAT f b (IBase c l) = b c l
-foldrPAT f b (IOR  l iatl iatr) = f ORNode l (foldrPAT f b iatl) (foldrPAT f b iatr)
-foldrPAT f b (IAND l iatl iatr) = f ANDNode l (foldrPAT f b iatl) (foldrPAT f b iatr)
-foldrPAT f b (ISEQ l iatl iatr) = f SEQNode l (foldrPAT f b iatl) (foldrPAT f b iatr)
-
 projConf :: Conf cost -> Node -> ATOps cost
 projConf (Conf orOp _ _)  ORNode  = OROp orOp
 projConf (Conf _ andOp _) ANDNode = ANDOp andOp
 projConf (Conf _ _ seqOp) SEQNode = SEQOp seqOp
 
-start' :: Conf cost -> PAttackTree cost l -> State ID (AttackTree cost l)
-start' _ (IBase c l) = do
+-- State(Base-ID,OR-ID,AND-ID,SEQ-ID)
+type PATState cost label = State ID (PAttackTree cost label)
+initialState :: ID
+initialState = 0
+
+incID :: State ID ID
+incID = do
   id <- get
   put $ id + 1
-  return $ Base id c l
-start' conf (IOR  l iatl iatr) = do
-  atl <- start' conf iatl
-  atr <- start' conf iatr
-  return $ OR (projConf conf ORNode) l atl atr
-start' conf (IAND l iatl iatr) = do
-  atl <- start' conf iatl
-  atr <- start' conf iatr
-  return $ AND (projConf conf ANDNode) l atl atr
-start' conf (ISEQ l iatl iatr) = do
-  atl <- start' conf iatl
-  atr <- start' conf iatr
-  return $ SEQ (projConf conf SEQNode) l atl atr
-                             
-start :: Conf cost -> PAttackTree cost l -> AttackTree cost l
-start conf ia = evalState (start' conf ia) 0
+  return id
 
+constructNode ::
+    (ID    ->
+     label ->
+     PAttackTree cost label ->
+     PAttackTree cost label ->
+     PAttackTree cost label)
+ -> label
+ -> PATState cost label
+ -> PATState cost label
+ -> PATState cost label
+constructNode node l atl atr = do
+  id <- incID
+  patl <- atl
+  patr <- atr
+  return $ node id l patl patr
+         
+start_PAT :: PAttackTree cost label -> PAttackTree cost label
+start_PAT = id
+
+start_AT :: Conf cost -> PAttackTree cost l -> AttackTree cost l
+start_AT conf s = let (pat,_) = runState (start' s) 0
+                   in AttackTree conf pat
+ where
+   start' :: PAttackTree cost label -> PATState cost label
+   start' (Base _ label cost) = do
+     id <- incID
+     return $ Base id label cost
+   start' (OR  _ label atl atr) = constructNode OR  label (start' atl) (start' atr) 
+   start' (AND _ label atl atr) = constructNode AND label (start' atl) (start' atr) 
+   start' (SEQ _ label atl atr) = constructNode SEQ label (start' atl) (start' atr) 
+        
 base :: label -> cost -> PAttackTree label cost
-base = IBase
-                                          
-and :: label -> PAttackTree cost label -> PAttackTree cost label -> PAttackTree cost label
-and l iatl iatr = IAND l iatl iatr
+base label cost = Base 0 label cost
+         
+and_node :: label
+         -> PAttackTree cost label
+         -> PAttackTree cost label
+         -> PAttackTree cost label
+and_node l atl atr = AND 0 l atl atr
 
-or :: label -> PAttackTree cost label -> PAttackTree cost label -> PAttackTree cost label
-or l iatl iatr = IOR l iatl iatr                  
+or_node :: label
+        -> PAttackTree cost label
+        -> PAttackTree cost label
+        -> PAttackTree cost label
+or_node l atl atr = OR 0 l atl atr
 
-seq :: label -> PAttackTree cost label -> PAttackTree cost label -> PAttackTree cost label
-seq l iatl iatr = ISEQ l iatl iatr
+seq_node :: label
+         -> PAttackTree cost label
+         -> PAttackTree cost label
+         -> PAttackTree cost label
+seq_node l atl atr = SEQ 0 l atl atr
