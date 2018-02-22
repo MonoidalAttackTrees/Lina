@@ -118,21 +118,22 @@ constructNode node l atl atr = do
   patl <- atl
   patr <- atr
   return $ node id l patl patr
-         
+
+
+start' :: PAttackTree cost label -> PATState cost label
+start' (Base _ label cost) = do
+   id <- incID
+   return $ Base id label cost
+start' (OR  _ label atl atr) = constructNode OR  label (start' atl) (start' atr) 
+start' (AND _ label atl atr) = constructNode AND label (start' atl) (start' atr) 
+start' (SEQ _ label atl atr) = constructNode SEQ label (start' atl) (start' atr) 
+
 start_PAT :: PAttackTree cost label -> PAttackTree cost label
-start_PAT = id
+start_PAT at = fst $ runState (start' at) 0
 
 start_AT :: Conf cost -> PAttackTree cost l -> AttackTree cost l
-start_AT conf s = let (pat,_) = runState (start' s) 0
-                   in AttackTree conf pat
- where
-   start' :: PAttackTree cost label -> PATState cost label
-   start' (Base _ label cost) = do
-     id <- incID
-     return $ Base id label cost
-   start' (OR  _ label atl atr) = constructNode OR  label (start' atl) (start' atr) 
-   start' (AND _ label atl atr) = constructNode AND label (start' atl) (start' atr) 
-   start' (SEQ _ label atl atr) = constructNode SEQ label (start' atl) (start' atr) 
+start_AT conf at = let (pat,_) = runState (start' at) 0
+                   in AttackTree conf pat   
         
 base :: label -> cost -> PAttackTree label cost
 base label cost = Base 0 label cost

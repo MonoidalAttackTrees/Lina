@@ -1,5 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Maude.SAND where
+module Maude.SAND(SANDForm(..),
+                  eq,
+                  normalize,
+                  eq_AT,
+                  eq_PT,
+                  eq_APT,
+                  eq_PAT) where
 
 import qualified Data.Text as T
 import Control.Monad.Except
@@ -17,6 +23,7 @@ data SANDForm label = SBase ID label
              | SOR  (SANDForm label) (SANDForm label)
              | SAND (SANDForm label) (SANDForm label)
              | SSEQ (SANDForm label) (SANDForm label)
+             deriving Eq
 
 parenForm :: SANDForm label -> String -> String
 parenForm (SBase _ _) str = str
@@ -72,6 +79,28 @@ parse_sform = parse expr ""
 
 sandFile :: FilePath
 sandFile = "/Users/heades/attack-trees/Lina/source/Maude/maude-modules/SAND.maude"
+
+eq_AT :: AttackTree cost label -> AttackTree cost label -> IO (Either String Bool)
+eq_AT (AttackTree _ at1) (AttackTree _ at2) = eq_PT at1 at2
+
+eq_APT :: AttackTree cost label -> PAttackTree cost label -> IO (Either String Bool)
+eq_APT at1 at2 = eq_PAT at2 at1
+
+eq_PAT :: PAttackTree cost label -> AttackTree cost label -> IO (Either String Bool)
+eq_PAT at1 (AttackTree _ at2) = eq_PT at1 at2
+
+eq_PT :: PAttackTree cost label -> PAttackTree cost label -> IO (Either String Bool)
+eq_PT at1 at2 = eq (toSANDForm at1) (toSANDForm at2)
+
+eq :: SANDForm label -> SANDForm label -> IO (Either String Bool)
+eq p q = do
+  p_norm <- normalize p
+  q_norm <- normalize q
+  case (p_norm,q_norm) of
+    (Right n, Right m) -> return $ Right $ n == m
+    (Left msg, Right _) -> return $ throwError msg
+    (Right _, Left msg) -> return $ throwError msg
+    (Left msg1, Left msg2) -> return $ Left $ msg1 ++ "\n" ++ msg2
 
 normalize :: SANDForm label -> IO (Either String (SANDForm ()))
 normalize p = do

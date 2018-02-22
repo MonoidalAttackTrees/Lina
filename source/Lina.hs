@@ -1,7 +1,5 @@
 module Lina
-    (module AttackTree.AttackTree,
-     module Maude.SAND) where
+    (module AttackTree.AttackTree) where
 
 import AttackTree.AttackTree
-import Maude.SAND
 

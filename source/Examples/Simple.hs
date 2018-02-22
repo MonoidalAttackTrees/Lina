@@ -1,8 +1,7 @@
 module Examples.Simple where
 
-import Prelude hiding (or,and,seq)
-
-import Lina
+import AttackTree.AttackTree
+import Maude.SAND
 
 example' :: PAttackTree Int String
 example' = start_PAT $
@@ -19,4 +18,3 @@ example'' conf = start_AT conf $
                  and_node "LABEL"
                      example'
                      (base 14 "base attack")
-
