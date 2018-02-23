@@ -5,12 +5,13 @@ subsort Atom < Formula .
 subsort Unit < Formula .
 
 op I : -> Unit .
-op -_ : Atom -> Atom [prec 50] .
+op -_ : Atom -> Atom [prec 50 gather (&)] .
 op _||_ : Formula Formula -> Formula [assoc comm id: I] .
 op _&_ : Formula Formula -> Formula [assoc] .
 op _x_ : Formula Formula -> Formula [assoc comm id: I] .
 op _+_ : Formula Formula -> Formula [assoc] .
 op _;_ : Formula Formula -> Formula [assoc id: I] .
+op \(_\) : Formula -> Formula [prec 0 gather (&)] .
 ops a b c d e : -> Atom .
 
 op neqI : Formula -> Bool .
@@ -52,3 +53,4 @@ crl [medial] : (P ; Q) & (R ; S) => (P & R) ; (Q & S)
 endm
 
 ***( ((((- a) x ((- b) ; (- c))) & ((- b) ; ((- d) x (- c)))) || (a + d) || (b ; c)) =>+ I )
+

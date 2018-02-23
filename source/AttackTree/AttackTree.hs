@@ -11,9 +11,14 @@ module AttackTree.AttackTree (
    base,
    and_node,
    or_node,
-   seq_node) where
+   seq_node,
+   RAttackTree(..),
+   eval,
+   eval_PT,
+   Attack(..),
+   get_attacks,
+   min_attack) where
 
-import Prelude hiding (or, and, seq)
 import Control.Monad.State
 
 import AttackTree.Configuration
@@ -53,7 +58,34 @@ data AttackTree cost label = AttackTree {
       conf   :: Conf cost,
       pATree :: PAttackTree cost label
 }
-           
+
+data RAttackTree cost label where
+    RBase :: ID
+          -> cost
+          -> label
+          -> RAttackTree cost label
+            
+    ROR :: ID
+        -> cost
+        -> label
+        -> RAttackTree cost label
+        -> RAttackTree cost label
+        -> RAttackTree cost label
+
+    RAND :: ID
+         -> cost
+         -> label
+         -> RAttackTree cost label
+         -> RAttackTree cost label
+         -> RAttackTree cost label
+
+    RSEQ :: ID
+         -> cost
+         -> label
+         -> RAttackTree cost label
+         -> RAttackTree cost label
+         -> RAttackTree cost label
+         
 data Node = ORNode | ANDNode | SEQNode
 
 foldrPAT :: (ID -> Node -> label -> b -> b -> b)
@@ -86,13 +118,26 @@ instance (Show cost, Show label) => Show (PAttackTree cost label) where
 
 instance (Show cost, Show label) => Show (AttackTree cost label) where
     show at = showPAT $ pATree at
-             
-projConf :: Conf cost -> Node -> ATOps cost
-projConf (Conf orOp _ _)  ORNode  = OROp orOp
-projConf (Conf _ andOp _) ANDNode = ANDOp andOp
-projConf (Conf _ _ seqOp) SEQNode = SEQOp seqOp
 
--- State(Base-ID,OR-ID,AND-ID,SEQ-ID)
+showNodeRT :: (Show cost, Show label) => Int -> String -> cost -> label -> String -> String -> String
+showNodeRT i node c l atl atr = node++"("++(show l)++","++(show c)++")\n"
+                             ++ tabs++"("++atl++")\n"
+                             ++ tabs++"("++atr++")"
+ where
+   tabs = take i $ repeat ' '
+
+showRT :: (Show cost, Show label) => RAttackTree cost label -> String
+showRT = showRT' 1
+         
+showRT' :: (Show cost, Show label) => Int -> RAttackTree cost label -> String
+showRT' i (RBase id c l)       = show (id,l,c)
+showRT' i (ROR  _ c l atl atr) = showNodeRT i "OR"  c l (showRT' (i+3) atl) (showRT' (i+3) atr)
+showRT' i (RAND _ c l atl atr) = showNodeRT i "AND" c l (showRT' (i+3) atl) (showRT' (i+3) atr)
+showRT' i (RSEQ _ c l atl atr) = showNodeRT i "SEQ" c l (showRT' (i+3) atl) (showRT' (i+3) atr)
+
+instance (Show cost, Show label) => Show (RAttackTree cost label) where
+    show = showRT
+                                 
 type PATState cost label = State ID (PAttackTree cost label)
 initialState :: ID
 initialState = 0
@@ -155,3 +200,98 @@ seq_node :: label
          -> PAttackTree cost label
          -> PAttackTree cost label
 seq_node l atl atr = SEQ 0 l atl atr
+
+get_cost :: RAttackTree cost label -> cost
+get_cost (RBase _ c _) = c
+get_cost (ROR _ c _ _ _) = c
+get_cost (RAND _ c _ _ _) = c
+get_cost (RSEQ _ c _ _ _) = c
+
+eval :: AttackTree cost label -> RAttackTree cost label
+eval (AttackTree conf at) = eval_PT conf at
+
+eval_PT :: Conf cost -> PAttackTree cost label -> RAttackTree cost label
+eval_PT _ (Base id c l) = RBase id c l
+eval_PT conf@(Conf orOp _ _) (OR id l atl atr) = ROR id cost l ratl ratr
+ where
+   ratl = eval_PT conf atl
+   ratr = eval_PT conf atr
+   cost = (get_cost ratl) `orOp` (get_cost ratr)   
+eval_PT conf@(Conf _ andOp _) (AND id l atl atr) = RAND id cost l ratl ratr
+ where
+   ratl = eval_PT conf atl
+   ratr = eval_PT conf atr
+   cost = (get_cost ratl) `andOp` (get_cost ratr)
+eval_PT conf@(Conf _ _ seqOp) (SEQ id l atl atr) = RSEQ id cost l ratl ratr
+ where
+   ratl = eval_PT conf atl
+   ratr = eval_PT conf atr
+   cost = (get_cost ratl) `seqOp` (get_cost ratr)
+
+data Attack cost label where
+    PBase :: ID
+          -> cost
+          -> label
+          -> Attack cost label
+            
+    POR :: ID
+        -> cost
+        -> label
+        -> Attack cost label
+        -> Attack cost label
+
+    PAND :: ID
+         -> cost
+         -> label
+         -> Attack cost label
+         -> Attack cost label
+         -> Attack cost label
+
+    PSEQ :: ID
+         -> cost
+         -> label
+         -> Attack cost label
+         -> Attack cost label
+         -> Attack cost label
+
+showNodePOR :: (Show cost, Show label) => Int -> String -> cost -> label -> String -> String
+showNodePOR i node c l at = node++"("++(show l)++","++(show c)++")\n" ++ tabs++"("++at++")"
+ where
+   tabs = take i $ repeat ' '
+
+showAttack :: (Show cost, Show label) => Attack cost label -> String
+showAttack = showAttack' 1
+         
+showAttack' :: (Show cost, Show label) => Int -> Attack cost label -> String
+showAttack' i (PBase id c l)       = show (id,l,c)
+showAttack' i (POR  _ c l at)      = showNodePOR i "OR"  c l (showAttack' (i+3) at)
+showAttack' i (PAND _ c l atl atr) = showNodeRT i "AND" c l (showAttack' (i+3) atl) (showAttack' (i+3) atr)
+showAttack' i (PSEQ _ c l atl atr) = showNodeRT i "SEQ" c l (showAttack' (i+3) atl) (showAttack' (i+3) atr)
+
+instance (Show cost, Show label) => Show (Attack cost label) where
+    show = showAttack
+
+get_pcost :: Attack cost label -> cost
+get_pcost (PBase _ c _) = c
+get_pcost (POR _ c _ _) = c
+get_pcost (PAND _ c _ _ _) = c
+get_pcost (PSEQ _ c _ _ _) = c
+
+get_attacks :: Conf cost -> RAttackTree cost label -> [Attack cost label]
+get_attacks conf (RBase id c l)  = [PBase id c l]
+get_attacks conf (ROR id c l lt rt) = (map compute_POR $ get_attacks conf lt) ++ (map compute_POR $ get_attacks conf rt)
+ where
+   compute_POR p = (POR id (get_pcost p) l p)
+get_attacks conf@(Conf _ andOp _) (RAND id c l lt rt) = [compute_PAND p1 p2 | p1 <- get_attacks conf lt,p2 <- get_attacks conf rt]
+ where
+   compute_PAND p1 p2 = (PAND id ((get_pcost p1) `andOp` (get_pcost p2)) l p1 p2)
+get_attacks conf@(Conf _ _ seqOp) (RSEQ id c l lt rt) = [compute_PSEQ p1 p2 | p1 <- get_attacks conf lt,p2 <- get_attacks conf rt]
+ where
+   compute_PSEQ p1 p2 = (PSEQ id ((get_pcost p1) `seqOp` (get_pcost p2)) l p1 p2)
+
+min_attack :: Ord cost => [Attack cost label] -> [Attack cost label]
+min_attack [] = []
+min_attack ps@(p:_) = min_attack' (get_pcost p) ps
+ where   
+   min_attack' :: Ord cost => cost -> [Attack cost label] -> [Attack cost label]
+   min_attack' c ps = [p | p <- ps,get_pcost p <= c]
