@@ -8,6 +8,7 @@ module Maude.SAND(SANDForm(..),
                   eq_PAT) where
 
 import qualified Data.Text as T
+import qualified Control.Monad.State as ST
 import Control.Monad.Except
 import Text.Parsec
 import qualified Text.Parsec.Token as Token
@@ -29,14 +30,30 @@ parenForm :: SANDForm label -> String -> String
 parenForm (SBase _ _) str = str
 parenForm _ str = "("++str++")"
 
-showSANDForm :: SANDForm label -> String
-showSANDForm (SBase id _) = (show id)
-showSANDForm (SOR p q)    = (parenForm p (showSANDForm p))++" || "++(parenForm q (showSANDForm q))
-showSANDForm (SAND p q)   = (parenForm p (showSANDForm p))++" . "++(parenForm q (showSANDForm q))
-showSANDForm (SSEQ p q)   = (parenForm p (showSANDForm p))++" ; "++(parenForm q (showSANDForm q))
+showSANDForm :: SANDForm label -> ST.State ([(ID,ID)],ID) String
+showSANDForm (SBase id _) = do
+  (t,n) <- ST.get 
+  case lookup id t of
+    Nothing  -> do
+      let id' = n
+      ST.put ((id,id'):t,n+1)
+      return $ show id'
+    Just id' -> return $ show id'    
+showSANDForm (SOR p q) = do
+  p_str <- showSANDForm p
+  q_str <- showSANDForm q
+  return $ (parenForm p p_str)++" || "++(parenForm q q_str)
+showSANDForm (SAND p q) = do
+  p_str <- showSANDForm p
+  q_str <- showSANDForm q
+  return $ (parenForm p p_str)++" . "++(parenForm q q_str)
+showSANDForm (SSEQ p q) =  do
+  p_str <- showSANDForm p
+  q_str <- showSANDForm q
+  return $ (parenForm p p_str)++" ; "++(parenForm q q_str)
 
 instance Show (SANDForm label) where
-    show = showSANDForm
+    show = \f -> ST.evalState (showSANDForm f) ([],1)
 
 toSANDForm :: PAttackTree cost label -> SANDForm label
 toSANDForm (Base id _ l)     = SBase id l
@@ -94,8 +111,12 @@ eq_PT at1 at2 = eq (toSANDForm at1) (toSANDForm at2)
 
 eq :: SANDForm label -> SANDForm label -> IO (Either String Bool)
 eq p q = do
+  putStrLn.show $ p
+  putStrLn.show $ q  
   p_norm <- normalize p
   q_norm <- normalize q
+  putStrLn.show $ p_norm
+  putStrLn.show $ q_norm
   case (p_norm,q_norm) of
     (Right n, Right m) -> return $ Right $ n == m
     (Left msg, Right _) -> return $ throwError msg

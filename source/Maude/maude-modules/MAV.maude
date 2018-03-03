@@ -27,30 +27,35 @@ eq neqI(P x Q) = true .
 eq neqI(P + Q) = true .
 eq neqI(P ; Q) = true .
 
-rl [tidy] : I & I => I .
+rl [tidy] : (I & I) => I .
 
-rl [inter] : - A || A => I .
+rl [inter] : ((- A) || A) => I .
 
 ***()
-crl [switch] : (P x Q) || R => P x (Q || R) 
+crl [switch] : ((P x Q) || R) => (P x (Q || R))
     if neqI(P) /\ neqI(R) .
 
 ***()
-crl [sequence] : (P ; Q) || (R ; S) => (P || R) ; (Q || S) 
+crl [sequence] : ((P ; Q) || (R ; S)) => ((P || R) ; (Q || S))
    if neqI(P) /\ neqI(S) .
 
-rl [left] : P + Q => P .
+rl [left] : (P + Q) => P .
 
-rl [right] : P + Q => Q .
+rl [right] : (P + Q) => Q .
 
 ***()
-crl [external] : (P & Q) || R => (P || R) & (Q || R) 
+crl [external] : ((P & Q) || R) => ((P || R) & (Q || R))
    if neqI(R) .
 
-crl [medial] : (P ; Q) & (R ; S) => (P & R) ; (Q & S)
+crl [medial] : ((P ; Q) & (R ; S)) => ((P & R) ; (Q & S))
    if (neqI(P) or neqI(R)) /\ (neqI(Q) or neqI(S)) .
 
 endm
-
 ***( ((((- a) x ((- b) ; (- c))) & ((- b) ; ((- d) x (- c)))) || (a + d) || (b ; c)) =>+ I )
+***( (b ; (d || c)) -o ((a + d) || (b ; c)) )
+***(
 
+- (b ; (d || c)) || ((a + d) || (b ; c))
+(-b ; -(d || c)) || ((a + d) || (b ; c))
+(-b ; (- d) x (- c)) || ((a + d) || (b ; c))
+)

@@ -5,16 +5,19 @@ protecting LOOP-MODE .
 sorts Formula .
 subsort Nat < Formula .
 
-op _||_  : Formula Formula -> Formula [assoc comm] .
-op _._ : Formula Formula -> Formula [assoc comm prec 50] .
-op _;_  : Formula Formula -> Formula [assoc prec 51] .
+op _||_  : Formula Formula -> Formula [ctor assoc comm] .
+op _._ : Formula Formula -> Formula [ctor assoc comm] .
+op _;_  : Formula Formula -> Formula [ctor assoc] .
+op EQ(_,_) : Formula Formula -> Bool .
 
 var P Q R S : Formula .
 
-rl [dist-.-||] : P . (Q || R) => (P . Q) || (P . R) .
-rl [dist-;-||]  : P ; (Q || R)  => (P ; Q)  || (P ; R) .
-rl [dist-||-;]  : (Q || R) ; P  => (Q ; P)  || (R ; P) .
+eq P . (Q || R)  = (P . Q) || (P . R) .
+eq P ; (Q || R)  = (P ; Q)  || (P ; R) .
+eq (Q || R) ; P  = (Q ; P)  || (R ; P) .
+
+ceq EQ(P,Q) = true
+  if P = Q .
+eq EQ(P,Q) = false .
 
 endm
-
-

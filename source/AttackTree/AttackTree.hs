@@ -1,14 +1,16 @@
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE UndecidableInstances #-}
-module AttackTree.AttackTree (
+module AttackTree.AttackTree (  
    PAttackTree(..),
+   ProcAT,
    AttackTree(..),
    module AttackTree.Configuration,
    ID,
    start_PAT,
    start_AT,
    base,
+   atr_base,
    and_node,
    or_node,
    seq_node,
@@ -17,7 +19,8 @@ module AttackTree.AttackTree (
    eval_PT,
    Attack(..),
    get_attacks,
-   min_attack) where
+   min_attack)
+where
 
 import Control.Monad.State
 
@@ -29,6 +32,8 @@ data ATOps c where
     SEQOp :: Ord c => (c -> c -> c) -> ATOps c
 
 type ID = Integer
+
+type ProcAT label = PAttackTree () label
 
 data PAttackTree cost label where
     Base :: ID
@@ -138,17 +143,22 @@ showRT' i (RSEQ _ c l atl atr) = showNodeRT i "SEQ" c l (showRT' (i+3) atl) (sho
 instance (Show cost, Show label) => Show (RAttackTree cost label) where
     show = showRT
                                  
-type PATState cost label = State ID (PAttackTree cost label)
-initialState :: ID
-initialState = 0
+type PATState cost label = State ([(label,ID)],ID) (PAttackTree cost label)
 
-incID :: State ID ID
-incID = do
-  id <- get
-  put $ id + 1
-  return id
+initialState :: ([(label,ID)],ID)
+initialState = ([],1)
 
-constructNode ::
+update_id_table :: Eq label => label -> State ([(label,ID)],ID) ID
+update_id_table label = do
+  (t,n) <- get
+  case lookup label t of
+    Nothing -> do
+      let id = n
+      put $ ((label,id):t,n+1)
+      return id
+    Just id -> return id
+
+constructNode :: Eq label =>
     (ID    ->
      label ->
      PAttackTree cost label ->
@@ -159,29 +169,31 @@ constructNode ::
  -> PATState cost label
  -> PATState cost label
 constructNode node l atl atr = do
-  id <- incID
+  id <- update_id_table l
   patl <- atl
   patr <- atr
   return $ node id l patl patr
 
-
-start' :: PAttackTree cost label -> PATState cost label
-start' (Base _ label cost) = do
-   id <- incID
-   return $ Base id label cost
+start' :: Eq label => PAttackTree cost label -> PATState cost label
+start' (Base _ cost label) = do
+  id <- update_id_table label
+  return $ Base id cost label    
 start' (OR  _ label atl atr) = constructNode OR  label (start' atl) (start' atr) 
 start' (AND _ label atl atr) = constructNode AND label (start' atl) (start' atr) 
 start' (SEQ _ label atl atr) = constructNode SEQ label (start' atl) (start' atr) 
 
-start_PAT :: PAttackTree cost label -> PAttackTree cost label
-start_PAT at = fst $ runState (start' at) 0
+start_PAT :: Eq label => PAttackTree cost label -> PAttackTree cost label
+start_PAT at = fst $ runState (start' at) initialState
 
-start_AT :: Conf cost -> PAttackTree cost l -> AttackTree cost l
-start_AT conf at = let (pat,_) = runState (start' at) 0
+start_AT :: Eq label => Conf cost -> PAttackTree cost label -> AttackTree cost label
+start_AT conf at = let (pat,_) = runState (start' at) initialState
                    in AttackTree conf pat   
-        
-base :: label -> cost -> PAttackTree label cost
-base label cost = Base 0 label cost
+
+base :: label -> ProcAT label
+base label = atr_base () label
+                      
+atr_base :: label -> cost -> PAttackTree label cost
+atr_base label cost = Base 0 label cost
          
 and_node :: label
          -> PAttackTree cost label
