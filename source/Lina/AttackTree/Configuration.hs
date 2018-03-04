@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs                #-}
-module AttackTree.Configuration where
+module Lina.AttackTree.Configuration where
 
 import Data.Semiring 
 

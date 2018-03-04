@@ -1,11 +1,11 @@
-module ATM where
+module Lina.Examples.ATM where
 
-import AttackTree.AttackTree
-import Maude.SAND
+import Lina.AttackTree
+import Lina.Maude.SAND
 
-atm1 :: ProcAT String
+atm1 :: PAttackTree String
 atm1 = start_PAT $
-  seq_node "ATM atack"
+  seq_node "ATM attack"
     (and_node "get credentials"
        (base "steal card")
        (or_node "get PIN"
@@ -13,7 +13,7 @@ atm1 = start_PAT $
           (base "find a post-it")))
     (base "withdraw money")
 
-atm2 :: ProcAT String
+atm2 :: PAttackTree String
 atm2 = start_PAT $
   or_node "ATM attack"
     (seq_node "attack vector 1"

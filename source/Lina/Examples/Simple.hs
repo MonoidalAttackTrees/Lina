@@ -1,7 +1,7 @@
-module Examples.Simple where
+module Lina.Examples.Simple where
 
-import AttackTree.AttackTree
-import Maude.SAND
+import Lina.AttackTree
+import Lina.Maude.SAND
 
 example' :: PAttackTree Int String
 example' = start_PAT $

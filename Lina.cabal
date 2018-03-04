@@ -18,14 +18,14 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:
-        Lina,
-        Utils,
-        AttackTree.AttackTree,
-        AttackTree.Configuration,
-        Examples.Simple,
-        Examples.Projection,
-        Maude.MaudeInterface,
-        Maude.SAND
+        Lina.Utils,
+        Lina.Error,
+        Lina.AttackTree,
+        Lina.AttackTree.Configuration,
+        Lina.Examples.ATM,          
+        -- Lina.Examples.Simple,
+        -- Lina.Examples.Projection,
+        Lina.Maude.SAND
   -- other-modules:       
   other-extensions:    GADTs, FlexibleInstances, UndecidableInstances
   build-depends:       base >=4.10 && <4.11,
@@ -33,6 +33,8 @@ library
                        maude >=0.6 && <0.7,
                        text >=1.2 && <1.3,
                        parsec >=3.1 && <3.2,
-                       semiring-simple >=0.2 && <0.3
+                       semiring-simple >=0.2 && <0.3,
+                       bimap >=0.3 && < 0.4,
+                       containers >=0.5 && <0.6
   hs-source-dirs:      source
   default-language:    Haskell2010

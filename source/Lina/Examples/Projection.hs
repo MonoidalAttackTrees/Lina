@@ -1,6 +1,6 @@
-module Examples.Projection where
+module Lina.Examples.Projection where
 
-import AttackTree.AttackTree
+import Lina.AttackTree
 
 pat1 :: PAttackTree Integer String
 pat1 = start_PAT $
