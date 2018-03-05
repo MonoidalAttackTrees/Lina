@@ -23,7 +23,7 @@ library
         Lina.AttackTree,
         Lina.AttackTree.Configuration,
         Lina.Examples.ATM,          
-        -- Lina.Examples.Simple,
+        Lina.Examples.Simple,
         -- Lina.Examples.Projection,
         Lina.Maude.SAND
   -- other-modules:       

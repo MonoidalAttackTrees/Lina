@@ -44,7 +44,7 @@ toSAND' (SEQ _ p q) = (parenForm p p_str)++" ; "++(parenForm q q_str)
    q_str = toSAND' q   
 
 toSAND_PAT :: PAttackTree label -> String
-toSAND_PAT (PAttackTree at _) = toSAND' at
+toSAND_PAT (APAttackTree at _ _) = toSAND' at
 
 sandFile :: FilePath
 sandFile = "/Users/heades/attack-trees/Lina/source/Lina/Maude/maude-modules/SAND.maude"
@@ -75,7 +75,7 @@ reID' (AND id l r) = reID_node AND id l r
 reID' (SEQ id l r) = reID_node SEQ id l r
 
 reID :: Ord label => PAttackTree label -> PAttackTree label -> Either Error IAT
-reID (PAttackTree _ labels1) (PAttackTree t2 labels2) = ST.evalState (reID' t2) (labels1,labels2) 
+reID (APAttackTree _ labels1 _) (APAttackTree t2 labels2 _) = ST.evalState (reID' t2) (labels1,labels2) 
 
 eq :: Ord label => PAttackTree label -> PAttackTree label -> IO (Either Error Bool)
 eq p q = do
