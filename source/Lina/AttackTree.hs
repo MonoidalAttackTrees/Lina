@@ -21,6 +21,7 @@ module Lina.AttackTree (
    seq_node,
    get_attacks,
    min_attacks,
+   max_attacks,
    get_attack_attribute)
 where
 
@@ -214,7 +215,16 @@ data IAttack where
   ORA   :: ID -> IAttack -> IAttack
   ANDA  :: ID -> IAttack -> IAttack -> IAttack
   SEQA  :: ID -> IAttack -> IAttack -> IAttack
- deriving Eq
+
+eq_iattack :: IAttack -> IAttack -> Bool
+eq_iattack (BaseA _) (BaseA _) = True
+eq_iattack (ORA _ t1) (ORA _ t2) = eq_iattack t1 t2
+eq_iattack (ANDA _ lt1 rt1) (ANDA _ lt2 rt2) = (eq_iattack lt1 lt2) && (eq_iattack rt1 rt2)
+eq_iattack (SEQA _ lt1 rt1) (SEQA _ lt2 rt2) = (eq_iattack lt1 lt2) && (eq_iattack rt1 rt2)
+eq_iattack _ _ = False
+
+instance Eq IAttack where
+  attack1 == attack2 = eq_iattack attack1 attack2
 
 data Attack attribute label = Attack {
   attack_itree :: IAttack,
@@ -310,7 +320,8 @@ compute_OPNode attributes labels node op id (Attack l _ attributes_l) (Attack r 
   mattr_r = M.lookup id_r attributes_r
   attributes_ats = attributes_l `M.union` attributes_r
 
-get_attacks_IAT :: Conf attribute
+get_attacks_IAT :: (Show label,Ord label, Ord attribute,Show attribute)
+                => Conf attribute
                 -> B.Bimap label ID
                 -> IAT
                 -> State (M.Map ID attribute) [Attack attribute label]
@@ -318,23 +329,28 @@ get_attacks_IAT conf labels (Base id) = do
   attributes <- get
   return [Attack (BaseA id) labels attributes]
 get_attacks_IAT conf labels (OR id lt rt) = do
-  attributes <- get  
+  attributes <- get
   lats <- get_attacks_IAT conf labels lt
   rats <- get_attacks_IAT conf labels rt
-  let comp_POR = compute_POR id
-  return $ (map comp_POR lats) ++ (map comp_POR rats)
-get_attacks_IAT conf@(Conf _ andOp _) labels (AND id lt rt) = do
+  let comp_POR  = compute_POR id
+  let attacks_l = (map comp_POR lats)
+  let attacks_r = (map comp_POR rats)
+  let attacks   = attacks_l ++ attacks_r  
+  return attacks
+get_attacks_IAT conf@(Conf andOp _) labels (AND id lt rt) = do
   attributes <- get
   lats <- get_attacks_IAT conf labels lt
   rats <- get_attacks_IAT conf labels rt
   return [(compute_OPNode attributes labels ANDA (andOp) id l r) | l <- lats,r <- rats]  
-get_attacks_IAT conf@(Conf _ _ seqOp) labels (SEQ id lt rt) = do
+get_attacks_IAT conf@(Conf _ seqOp) labels (SEQ id lt rt) = do
   attributes <- get
   lats <- get_attacks_IAT conf labels lt
   rats <- get_attacks_IAT conf labels rt
   return [(compute_OPNode attributes labels SEQA (seqOp) id l r) | l <- lats,r <- rats]  
 
-get_attacks :: AttackTree attribute label -> [Attack attribute label]
+get_attacks :: (Ord label, Ord attribute,Show label,Show attribute)
+            => AttackTree attribute label
+            -> [Attack attribute label]
 get_attacks (AttackTree (APAttackTree tree labels attributes) conf) =
   evalState (get_attacks_IAT conf labels tree) attributes
 
@@ -346,9 +362,24 @@ get_attack_attribute (Attack tree labels attributes) =
  where
    id = get_id tree
 
+eq_attacks :: Eq attribute
+           => M.Map ID attribute
+           -> ID
+           -> M.Map ID attribute
+           -> ID
+           -> Bool
+eq_attacks attributes1 id1 attributes2 id2 = att1 == att2
+ where
+  get_att attributes id = case M.lookup id attributes of
+    Just att -> att
+    Nothing -> error.show $ AttrNotFound "get_attack_attribute" id
+
+  att1 = get_att attributes1 id1
+  att2 = get_att attributes2 id2
+
 instance (Eq label,Eq attribute) => Eq (Attack attribute label) where
   (Attack tree1 labels1 attributes1) == (Attack tree2 labels2 attributes2) =
-    (tree1 == tree2) && (attributes1 == attributes2) && (labels1 == labels2)
+    (tree1 == tree2) && (eq_attacks attributes1 (get_id tree1) attributes2 (get_id tree2))
 
 compare_attacks :: Ord attribute
                 => M.Map ID attribute
@@ -356,9 +387,9 @@ compare_attacks :: Ord attribute
                 -> M.Map ID attribute
                 -> ID
                 -> Ordering
-compare_attacks attributes1 id1 attributes2 id2 | att1 < att2 = LT
-                                                | att1 > att2 = GT
-                                                | otherwise   = EQ
+compare_attacks attributes1 id1 attributes2 id2 | att1 < att2  = LT
+                                                | att1 > att2  = GT
+                                                | att1 == att2 = EQ
  where
   get_att attributes id = case M.lookup id attributes of
     Just att -> att
@@ -374,6 +405,9 @@ instance (Ord label,Ord attribute) => Ord (Attack attribute label) where
 min_attacks :: (Ord label,Ord attribute)
             => [Attack attribute label]
             -> [Attack attribute label]
-min_attacks attacks = [a | a <- attacks,a <= min_attack]
- where
-   min_attack = minimum attacks
+min_attacks attacks = minimums attacks
+
+max_attacks :: (Ord label,Ord attribute)
+            => [Attack attribute label]
+            -> [Attack attribute label]
+max_attacks attacks = maximums attacks

@@ -25,7 +25,7 @@ pat2 = start_PAT $
     (and_node "and 1"
        (or_node "or 2"
           (base_wa 1 "base 1")
-          (base_wa 3 "base 2"))
+          (base_wa 1 "base 2"))
        (base_wa 3 "base 3"))
     (seq_node "seq 1"
        (base_wa 2 "base 4")
@@ -35,3 +35,17 @@ pat2 = start_PAT $
 
 at2 :: Conf Integer -> AttackTree Integer String
 at2 conf = start_AT conf (insert pat2)
+
+ex1 :: AttackTree Integer String
+ex1 = start_AT addMulConf $
+  or_node "or node"
+    (base_wa 1 "base 1")
+    (base_wa 2 "base 2")
+
+ex2 :: AttackTree Integer String
+ex2 = start_AT addMulConf $
+  or_node "or node"
+    (base_wa 1 "base 3")
+    (base_wa 2 "base 4")
+
+    
