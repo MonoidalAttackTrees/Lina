@@ -127,7 +127,9 @@ Please follow the following directions:
 
    For example, suppose you cloned `Lina` in the directory `/home/username/tools/Lina`, then you would add the path `/home/username/tools/Lina/source/Maude/maude-modules/` to the `MAUDE_LIB` environment variable.
 
-- `cd Lina && stack build`
+- Move into the Lina directory: `cd Lina`
+
+- Build Lina: `stack build`
 
    At this point `stack` will download Haskell and all of Lina's dependencies within the Lina directory and not on your system.  This means that if you want to uninstall Lina and Haskell, then simply delete the Lina directory.
 
