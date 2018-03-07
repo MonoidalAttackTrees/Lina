@@ -114,16 +114,22 @@ There are lot of plans for future extensions like the following:
 Installation
 ------------
 
-We have tried to make installation as easy as possible.  Please follow the following directions:
+We have tried to make installation as easy as possible.  Lina has currently only been tested on Mac OS X 10.11.6.
+
+Please follow the following directions:
 
 - Install [Maude](http://maude.cs.illinois.edu/w/index.php?title=The_Maude_System)
   - Make sure that the `maude` command is in your `PATH`, and the `MAUDE_LIB` environment variable is set and includes the path to the `prelude.maude` file.
 - Install [stack](https://docs.haskellstack.org/en/stable/README/)
 - Then run the following: 
 - `git clone git@github.com:MonoidalAttackTrees/Lina.git`
+-  Add the absolute path to the directory `Lina/source/Maude/maude-modules/` to  the `MAUDE_LIB` environment variable.
+
+   For example, suppose you cloned `Lina` in the directory `/home/username/tools/Lina`, then you would add the path `/home/username/tools/Lina/source/Maude/maude-modules/` to the `MAUDE_LIB` environment variable.
+
 - `cd Lina && stack build`
 
-   At this point `stack` will download Haskell and all of Lina's dependencies within the Lina directory and not on your system.  This means, that if you want to uninstall Lina and Haskell, simply delete the Lina directory.
+   At this point `stack` will download Haskell and all of Lina's dependencies within the Lina directory and not on your system.  This means that if you want to uninstall Lina and Haskell, then simply delete the Lina directory.
 
 - Lina is now ready to be used.
 

@@ -24,13 +24,15 @@ library
         Lina.AttackTree.Configuration,
         Lina.Examples.ATM,          
         Lina.Examples.Simple,
-        -- Lina.Examples.Projection,
+        Lina.Examples.Projection,
+        Lina.Maude.Module,
         Lina.Maude.SAND
   -- other-modules:       
   other-extensions:    GADTs, FlexibleInstances, UndecidableInstances
   build-depends:       base >=4.10 && <4.11,
                        mtl >=2.2 && <2.3,
                        maude >=0.6.1,
+                       filepath >= 1.4.2,
                        text >=1.2 && <1.3,
                        parsec >=3.1 && <3.2,
                        semiring-simple >=0.2 && <0.3,

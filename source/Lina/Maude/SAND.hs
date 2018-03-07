@@ -20,9 +20,12 @@ import qualified Data.Bimap as B
 import Lina.Utils
 import Lina.Error
 import Lina.AttackTree
+import Lina.Maude.Module
 import Language.Maude.Syntax
 import Language.Maude.Exec
 
+sandFile :: IO FilePath
+sandFile = get_maude_mod_absolute_path "SAND.maude"
 
 parenForm :: IAT -> String -> String
 parenForm (Base _) str = str
@@ -45,9 +48,6 @@ toSAND' (SEQ _ p q) = (parenForm p p_str)++" ; "++(parenForm q q_str)
 
 toSAND_PAT :: PAttackTree label -> String
 toSAND_PAT (APAttackTree at _ _) = toSAND' at
-
-sandFile :: FilePath
-sandFile = "/Users/heades/attack-trees/Lina/source/Lina/Maude/maude-modules/SAND.maude"
 
 -- TODO: Factor out finding the max.
 reID_node :: Ord label => (ID -> IAT -> IAT -> IAT) -> ID -> IAT -> IAT -> ST.State (B.Bimap label ID,B.Bimap label ID) (Either Error IAT)
@@ -101,7 +101,8 @@ maude_bool s = throwError $ MaudeNotBoolError "maude_bool" s
 
 eq_maude :: String -> String -> IO (Either Error Bool)
 eq_maude p q = do
-  (RewriteResult (Term _ result _) _) <- rewrite [sandFile] (T.pack cms)
+  file <- sandFile
+  (RewriteResult (Term _ result _) _) <- rewrite [file] (T.pack cms)
   return $ maude_bool result
  where
    cms = "EQ(("++p++"), ("++q++"))"
