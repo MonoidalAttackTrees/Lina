@@ -1,7 +1,7 @@
 module Lina.Examples.Simple where
 
 import Lina.AttackTree
-import Lina.Maude.SAND
+import Lina.Maude.Causal
 
 example' :: APAttackTree Int String
 example' = start_PAT $

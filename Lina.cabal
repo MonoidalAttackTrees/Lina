@@ -26,7 +26,8 @@ library
         Lina.Examples.Simple,
         Lina.Examples.Projection,
         Lina.Maude.Module,
-        Lina.Maude.SAND
+        Lina.Maude.Causal
+        Lina.Maude.MATLL          
   -- other-modules:       
   other-extensions:    GADTs, FlexibleInstances, UndecidableInstances
   build-depends:       base >=4.10 && <4.11,

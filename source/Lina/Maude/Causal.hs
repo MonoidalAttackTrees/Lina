@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lina.Maude.SAND-- (SANDForm(..),
+module Lina.Maude.Causal-- (CausalForm(..),
                  --  eq,
                  --  normalize,
                  --  eq_AT,
@@ -24,30 +24,30 @@ import Lina.Maude.Module
 import Language.Maude.Syntax
 import Language.Maude.Exec
 
-sandFile :: IO FilePath
-sandFile = get_maude_mod_absolute_path "SAND.maude"
+causalFile :: IO FilePath
+causalFile = get_maude_mod_absolute_path "Causal.maude"
 
 parenForm :: IAT -> String -> String
 parenForm (Base _) str = str
 parenForm _ str = "("++str++")"
 
-toSAND' :: IAT -> String
-toSAND' (Base id) = show id    
-toSAND' (OR _ p q) = (parenForm p p_str)++" || "++(parenForm q q_str)
+toCausal' :: IAT -> String
+toCausal' (Base id) = show id    
+toCausal' (OR _ p q) = (parenForm p p_str)++" || "++(parenForm q q_str)
  where
-   p_str = toSAND' p
-   q_str = toSAND' q
-toSAND' (AND _ p q) = (parenForm p p_str)++" . "++(parenForm q q_str)
+   p_str = toCausal' p
+   q_str = toCausal' q
+toCausal' (AND _ p q) = (parenForm p p_str)++" . "++(parenForm q q_str)
  where
-   p_str = toSAND' p
-   q_str = toSAND' q
-toSAND' (SEQ _ p q) = (parenForm p p_str)++" ; "++(parenForm q q_str)
+   p_str = toCausal' p
+   q_str = toCausal' q
+toCausal' (SEQ _ p q) = (parenForm p p_str)++" ; "++(parenForm q q_str)
  where
-   p_str = toSAND' p
-   q_str = toSAND' q   
+   p_str = toCausal' p
+   q_str = toCausal' q   
 
-toSAND_PAT :: PAttackTree label -> String
-toSAND_PAT (APAttackTree at _ _) = toSAND' at
+toCausal_PAT :: PAttackTree label -> String
+toCausal_PAT (APAttackTree at _ _) = toCausal' at
 
 -- TODO: Factor out finding the max.
 reID_node :: Ord label => (ID -> IAT -> IAT -> IAT) -> ID -> IAT -> IAT -> ST.State (B.Bimap label ID,B.Bimap label ID) (Either Error IAT)
@@ -79,11 +79,11 @@ reID (APAttackTree _ labels1 _) (APAttackTree t2 labels2 _) = ST.evalState (reID
 
 eq :: Ord label => PAttackTree label -> PAttackTree label -> IO (Either Error Bool)
 eq p q = do
-  let p_sand = toSAND_PAT p
+  let p_causal = toCausal_PAT p
   case reID p q of
     Right q' -> do
-      let q_sand = toSAND' q'
-      eq_maude p_sand q_sand
+      let q_causal = toCausal' q'
+      eq_maude p_causal q_causal
     Left e -> return $ throwError e
 
 eq_PAT :: Ord label => PAttackTree label -> PAttackTree label -> IO ()
@@ -101,7 +101,7 @@ maude_bool s = throwError $ MaudeNotBoolError "maude_bool" s
 
 eq_maude :: String -> String -> IO (Either Error Bool)
 eq_maude p q = do
-  file <- sandFile
+  file <- causalFile
   (RewriteResult (Term _ result _) _) <- rewrite [file] (T.pack cms)
   return $ maude_bool result
  where

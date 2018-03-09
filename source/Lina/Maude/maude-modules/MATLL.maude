@@ -1,0 +1,30 @@
+mod MATLL is
+
+protecting LOOP-MODE .
+
+sorts Formula .
+subsort Nat < Formula .
+
+op _||_  : Formula Formula -> Formula [ctor assoc comm] .
+op _._ : Formula Formula -> Formula [ctor assoc comm prec 41] .
+op _;_  : Formula Formula -> Formula [ctor assoc prec 40] .
+
+var a b c d : Formula .
+
+*** Specialization rewrite system:
+
+rl [a1] : a . (b || c)  => (a . b) || (a . c) .
+rl [a1Inv] : (a . b) || (a . c) => a . (b || c) .
+rl [a2] : a ; (b || c)  => (a ; b) || (a ; c) .
+rl [a2Inv] : (a ; b) || (a ; c) => a ; (b || c) .
+rl [a3] : (b || c) ; a  => (b ; a) || (c ; a) .
+rl [a3Inv] : (b ; a) || (c ; a) => (b || c) ; a .
+rl [a4] : (a . b) ; c => a . (b ; c) .
+rl [a4Inv] : a . (b ; c) => (a . b) ; c .
+rl [a5] : (a ; b) . (c ; d) => (a . c) ; (b . d) .
+rl [a5Inv] : (a . c) ; (b . d) => (a ; b) . (c ; d) .
+
+rl [switch] : a ; (b . c) => b . (a ; c) .
+rl [seq-to-para] : a ; b => a . b .
+
+endm

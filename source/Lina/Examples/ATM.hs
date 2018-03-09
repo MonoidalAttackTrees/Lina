@@ -1,7 +1,8 @@
 module Lina.Examples.ATM where
 
 import Lina.AttackTree
-import Lina.Maude.SAND
+import qualified Lina.Maude.Causal as C
+import qualified Lina.Maude.MATLL  as M
 
 atm1 :: PAttackTree String
 atm1 = start_PAT $
