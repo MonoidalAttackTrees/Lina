@@ -19,6 +19,7 @@ module Lina.AttackTree (
    and_node,
    or_node,
    seq_node,
+   eval,
    get_attacks,
    min_attacks,
    max_attacks,
@@ -62,19 +63,26 @@ data AttackTree attribute label = AttackTree {
       configuration :: Conf attribute
 }
 
-showNode :: (Ord label,Show label) => Int -> ID -> String -> B.Bimap label ID -> String -> String -> String
+showNode :: (Ord label,Show label)
+         => Int
+         -> ID
+         -> String
+         -> B.Bimap label ID
+         -> String
+         -> String
+         -> String
 showNode i id node labels lt rt = 
   case B.lookupR id labels of
-    Just l -> node++"("++(show id)++","++(show l)++")\n"
-                            ++ tabs++"("++lt++")\n"
-                            ++ tabs++"("++rt++")"
+    Just l -> node++"("++(show l)++")\n"
+                       ++ tabs++"("++lt++")\n"
+                       ++ tabs++"("++rt++")"
     Nothing -> error.show $ LabelNotFound "showNode" id
  where
    tabs = take i $ repeat '\t'
 
 showIAT' :: (Ord label,Show label) => Int -> B.Bimap label ID -> IAT -> String
 showIAT' i labels (Base id)      = case B.lookupR id labels of
-                                     Just l -> (show id)++","++(show l)
+                                     Just l -> (show l)
                                      Nothing -> error.show $ LabelNotFound "showIAT'" id
 showIAT' i labels (OR id lt rt)  = showNode i id "OR"  labels (showIAT' (i+1) labels lt) (showIAT' (i+1) labels rt)
 showIAT' i labels (AND id lt rt) = showNode i id "AND" labels (showIAT' (i+1) labels lt) (showIAT' (i+1) labels rt)
@@ -86,10 +94,23 @@ showPAT (APAttackTree tree labels _) = showIAT' 1 labels tree
 instance {-# OVERLAPS #-} (Ord label, Show label) => Show (PAttackTree label) where
     show = showPAT
 
-buildShowString :: Show label => Int -> String -> ID -> label -> String -> String -> String
-buildShowString i node id l lt rt = node++"("++(show id)++","++(show l)++")\n"
-                                        ++ tabs++"("++lt++")\n"
-                                        ++ tabs++"("++rt++")"
+buildShowString :: (Show attribute,Show label)
+                => Int
+                -> String
+                -> ID
+                -> Maybe attribute
+                -> label
+                -> String
+                -> String
+                -> String
+buildShowString i node id ma l lt rt =
+  case ma of
+    Just a -> node++ "("++(show l)++","++(show a)++")\n"
+                  ++tabs++"("++lt++")\n"
+                  ++tabs++"("++rt++")"
+    Nothing -> node++"("++(show l)++")\n"
+                   ++tabs++"("++lt++")\n"
+                   ++tabs++"("++rt++")"                  
  where
    tabs = take i $ repeat '\t'
 
@@ -105,17 +126,32 @@ get_apat_label w id labels =
     Just l -> l
     Nothing -> error.show $ LabelNotFound w id    
 
-showANode :: (Ord label,Ord attribute,Show label,Show attribute) => Int -> ID -> String -> B.Bimap label ID -> M.Map ID attribute -> String -> String -> String
-showANode i id node labels attributes lt rt = buildShowString i node id label lt rt
+showANode :: (Ord label,Ord attribute,Show label,Show attribute)
+          => Int
+          -> ID
+          -> String
+          -> B.Bimap label ID
+          -> M.Map ID attribute
+          -> String
+          -> String
+          -> String
+showANode i id node labels attributes lt rt = buildShowString i node id attribute label lt rt
  where
    label = get_apat_label "showANode" id labels
+   attribute = M.lookup id attributes
 
-showAPAT' :: (Ord label,Ord attribute,Show label,Show attribute) => Int -> B.Bimap label ID -> M.Map ID attribute -> IAT -> String
-showAPAT' i labels attributes (Base id)      = case (B.lookupR id labels,M.lookup id attributes) of
-                                                 (Just l,Just a) -> (show id)++","++(show l)++","++(show a)
-                                                 (Nothing,Nothing) -> error $ (show $ LabelNotFound "showIAT'" id) ++ "\n" ++ (show $ AttrNotFound "shoqIAT'" id)
-                                                 (Nothing,_) -> error $ (show $ LabelNotFound "showIAT'" id)
-                                                 (_,Nothing) -> error $ (show $ AttrNotFound "shoqIAT'" id)                                                 
+showAPAT' :: (Ord label,Ord attribute,Show label,Show attribute)
+          => Int
+          -> B.Bimap label ID
+          -> M.Map ID attribute
+          -> IAT
+          -> String
+showAPAT' i labels attributes (Base id) =
+  case (B.lookupR id labels,M.lookup id attributes) of
+    (Just l,Just a) -> (show l)++","++(show a)
+    (Nothing,Nothing) -> error $ (show $ LabelNotFound "showIAT'" id) ++ "\n" ++ (show $ AttrNotFound "shoqIAT'" id)
+    (Nothing,_) -> error $ (show $ LabelNotFound "showIAT'" id)
+    (_,Nothing) -> error $ (show $ AttrNotFound "shoqIAT'" id)                                                 
 showAPAT' i labels attributes (OR id lt rt)  = showANode i id "OR"  labels attributes (showAPAT' (i+1) labels attributes lt) (showAPAT' (i+1) labels attributes rt)
 showAPAT' i labels attributes (AND id lt rt) = showANode i id "AND" labels attributes (showAPAT' (i+1) labels attributes lt) (showAPAT' (i+1) labels attributes rt)
 showAPAT' i labels attributes (SEQ id lt rt) = showANode i id "SEQ" labels attributes (showAPAT' (i+1) labels attributes lt) (showAPAT' (i+1) labels attributes rt)
@@ -131,7 +167,7 @@ instance (Ord label,Ord attribute,Show label,Show attribute) => Show (AttackTree
 
 type PATState label = State (ID,B.Bimap label ID) (PAttackTree label) 
 
-type ALState attribute label a = State (M.Map ID attribute,B.Bimap label ID) a
+type ALState attribute label a = StateT (M.Map ID attribute,B.Bimap label ID) (Either Error) a
 type APATState attribute label = State (ID,M.Map ID attribute,B.Bimap label ID) (APAttackTree attribute label) 
 
 build_node :: Ord label => (ID -> IAT -> IAT -> IAT) -> label -> APATState attribute label -> APATState attribute label -> APATState attribute label
@@ -210,15 +246,61 @@ insert p@(APAttackTree tree labels attributes) = do
   put (cid+max+1, attributes', labels)
   return $ APAttackTree tree' labels' attributes'
 
+get_id :: IAT -> ID
+get_id (Base id) = id
+get_id (OR id _ _) = id
+get_id (AND id _ _) = id
+get_id (SEQ id _ _) = id
+
+get_attr :: ID -> M.Map ID attribute -> Either Error attribute
+get_attr id attributes =
+  case M.lookup id attributes of
+    Just r -> return r
+    Nothing -> throwError $ AttrNotFound "get_att" id
+
+compute_attr :: (attribute -> attribute -> attribute) -> ID -> IAT -> IAT -> ALState attribute label ()
+compute_attr op id at1 at2 = do
+  (attributes,labels) <- get
+  let id1 = get_id at1
+  let id2 = get_id at2
+  let er1 = get_attr id1 attributes
+  let er2 = get_attr id2 attributes
+  case (er1,er2) of
+    (Right r1,Right r2) -> do
+      let r = r1 `op` r2
+      put (M.insert id r attributes,labels)
+    (Left e1,Left e2) -> throwError $ Errors [AttrNotFound "eval_attr" id1,AttrNotFound "eval_attr" id2]
+    (Left e,_) -> throwError $ AttrNotFound "eval_attr" id1
+    (_,Left e) -> throwError $ AttrNotFound "eval_attr" id2
+
+eval_attr :: Conf attribute -> IAT -> ALState attribute label ()
+eval_attr _ (Base _) = return ()
+eval_attr conf@(Conf orOp _ _)  (OR id at1 at2)  = do
+  eval_attr conf at1
+  eval_attr conf at2
+  compute_attr orOp id at1 at2
+eval_attr conf@(Conf _ andOp _) (AND id at1 at2) = do
+  eval_attr conf at1
+  eval_attr conf at2
+  compute_attr andOp id at1 at2
+eval_attr conf@(Conf _ _ seqOp) (SEQ id at1 at2) = do
+  eval_attr conf at1
+  eval_attr conf at2
+  compute_attr seqOp id at1 at2
+
+eval :: AttackTree attribute label -> Either Error (AttackTree attribute label)
+eval (AttackTree (APAttackTree at labels attributes) conf) =
+  case runStateT (eval_attr conf at) (attributes,labels) of
+    Right (_,(attributes',labels')) ->  return $ AttackTree (APAttackTree at labels' attributes') conf
+    Left e -> throwError e
+
 data IAttack where
   BaseA :: ID -> IAttack
-  ORA   :: ID -> IAttack -> IAttack
   ANDA  :: ID -> IAttack -> IAttack -> IAttack
   SEQA  :: ID -> IAttack -> IAttack -> IAttack
 
 eq_iattack :: IAttack -> IAttack -> Bool
 eq_iattack (BaseA _) (BaseA _) = True
-eq_iattack (ORA _ t1) (ORA _ t2) = eq_iattack t1 t2
 eq_iattack (ANDA _ lt1 rt1) (ANDA _ lt2 rt2) = (eq_iattack lt1 lt2) && (eq_iattack rt1 rt2)
 eq_iattack (SEQA _ lt1 rt1) (SEQA _ lt2 rt2) = (eq_iattack lt1 lt2) && (eq_iattack rt1 rt2)
 eq_iattack _ _ = False
@@ -241,7 +323,7 @@ showORANode :: (Ord label,Ord attribute,Show label,Show attribute)
             -> String
 showORANode i id labels attributes t = 
   case (B.lookupR id labels,M.lookup id attributes) of
-    (Just l,Just att) -> "OR("++(show id)++","++(show l)++","++(show att)++")\n"
+    (Just l,Just att) -> "OR("++(show l)++","++(show att)++")\n"
                    ++ tabs++"("++t++")"
     (Nothing,_) -> show $ LabelNotFound "showANode" id
     (_,Nothing) -> show $ AttrNotFound "showANode" id    
@@ -249,7 +331,7 @@ showORANode i id labels attributes t =
    tabs = take i $ repeat '\t'
 
 build_attack_node_show_string :: (Show label, Show attribute) => Int -> String -> ID -> label -> attribute -> String -> String -> String
-build_attack_node_show_string i node id l a lt rt = node++"("++(show id)++","++(show l)++","++(show a)++")\n"
+build_attack_node_show_string i node id l a lt rt = node++"("++(show l)++","++(show a)++")\n"
                                                         ++ tabs++"("++lt++")\n"
                                                         ++ tabs++"("++rt++")"
  where
@@ -269,11 +351,10 @@ showIAttack' :: (Ord label,Ord attribute,Show label,Show attribute)
              -> String
 showIAttack' i labels attributes (BaseA id) =
   case (B.lookupR id labels,M.lookup id attributes) of
-    (Just l,Just a) -> (show id)++","++(show l)++","++(show a)
+    (Just l,Just a) -> (show l)++","++(show a)
     (Nothing,Nothing) -> error $ (show $ LabelNotFound "showIAttack'" id) ++ "\n" ++ (show $ AttrNotFound "showIAttack'" id)
     (Nothing,_) -> error $ (show $ LabelNotFound "showIAttack'" id)
     (_,Nothing) -> error $ (show $ AttrNotFound "showIAttack'" id)                                                 
-showIAttack' i labels attributes (ORA id t)      = showORANode i id labels attributes (showIAttack' (i+1) labels attributes t)
 showIAttack' i labels attributes (ANDA id lt rt) = show_attack_node i id "AND" labels attributes (showIAttack' (i+1) labels attributes lt) (showIAttack' (i+1) labels attributes rt)
 showIAttack' i labels attributes (SEQA id lt rt) = show_attack_node i id "SEQ" labels attributes (showIAttack' (i+1) labels attributes lt) (showIAttack' (i+1) labels attributes rt)
 
@@ -283,21 +364,10 @@ showAttack (Attack tree labels attributes) = showIAttack' 1 labels attributes tr
 instance (Ord label,Ord attribute,Show label,Show attribute) => Show (Attack attribute label) where
     show = showAttack
 
-get_id :: IAttack -> ID
-get_id (BaseA id) = id
-get_id (ORA id _) = id
-get_id (ANDA id _ _) = id
-get_id (SEQA id _ _) = id
-
-compute_POR :: ID
-            -> Attack attribute label
-            -> Attack attribute label
-compute_POR id (Attack attack labels attack_attributes) = 
-  case M.lookup a_id attack_attributes of
-    Just attr -> Attack (ORA id attack) labels (M.insert id attr attack_attributes)
-    Nothing -> error $ "Failed to find the attribute for id: "++(show id)++" in compute_POR"
- where
-   a_id = get_id attack
+get_aid :: IAttack -> ID
+get_aid (BaseA id) = id
+get_aid (ANDA id _ _) = id
+get_aid (SEQA id _ _) = id
    
 compute_OPNode :: M.Map ID attribute
                -> B.Bimap label ID
@@ -314,8 +384,8 @@ compute_OPNode attributes labels node op id (Attack l _ attributes_l) (Attack r 
     (_,_) -> error $ "Failed to find an attribute for id: "++(show id_l)++
                      " or id: "++(show id_r)++" in compute_OpNode"
  where
-  id_l = get_id l
-  id_r = get_id r
+  id_l = get_aid l
+  id_r = get_aid r
   mattr_l = M.lookup id_l attributes_l
   mattr_r = M.lookup id_r attributes_r
   attributes_ats = attributes_l `M.union` attributes_r
@@ -332,17 +402,13 @@ get_attacks_IAT conf labels (OR id lt rt) = do
   attributes <- get
   lats <- get_attacks_IAT conf labels lt
   rats <- get_attacks_IAT conf labels rt
-  let comp_POR  = compute_POR id
-  let attacks_l = (map comp_POR lats)
-  let attacks_r = (map comp_POR rats)
-  let attacks   = attacks_l ++ attacks_r  
-  return attacks
-get_attacks_IAT conf@(Conf andOp _) labels (AND id lt rt) = do
+  return $ lats ++ rats
+get_attacks_IAT conf@(Conf _ andOp _) labels (AND id lt rt) = do
   attributes <- get
   lats <- get_attacks_IAT conf labels lt
   rats <- get_attacks_IAT conf labels rt
   return [(compute_OPNode attributes labels ANDA (andOp) id l r) | l <- lats,r <- rats]  
-get_attacks_IAT conf@(Conf _ seqOp) labels (SEQ id lt rt) = do
+get_attacks_IAT conf@(Conf _ _ seqOp) labels (SEQ id lt rt) = do
   attributes <- get
   lats <- get_attacks_IAT conf labels lt
   rats <- get_attacks_IAT conf labels rt
@@ -360,7 +426,7 @@ get_attack_attribute (Attack tree labels attributes) =
     Just att -> return att
     Nothing -> throwError $ AttrNotFound "get_attack_attribute" id
  where
-   id = get_id tree
+   id = get_aid tree
 
 eq_attacks :: Eq attribute
            => M.Map ID attribute
@@ -379,7 +445,7 @@ eq_attacks attributes1 id1 attributes2 id2 = att1 == att2
 
 instance (Eq label,Eq attribute) => Eq (Attack attribute label) where
   (Attack tree1 labels1 attributes1) == (Attack tree2 labels2 attributes2) =
-    (tree1 == tree2) && (eq_attacks attributes1 (get_id tree1) attributes2 (get_id tree2))
+    (tree1 == tree2) && (eq_attacks attributes1 (get_aid tree1) attributes2 (get_aid tree2))
 
 compare_attacks :: Ord attribute
                 => M.Map ID attribute
@@ -400,7 +466,7 @@ compare_attacks attributes1 id1 attributes2 id2 | att1 < att2  = LT
 
 instance (Ord label,Ord attribute) => Ord (Attack attribute label) where
   compare (Attack tree1 _ attributes1) (Attack tree2 _ attributes2) =
-    compare_attacks attributes1 (get_id tree1) attributes2 (get_id tree2)
+    compare_attacks attributes1 (get_aid tree1) attributes2 (get_aid tree2)
 
 min_attacks :: (Ord label,Ord attribute)
             => [Attack attribute label]

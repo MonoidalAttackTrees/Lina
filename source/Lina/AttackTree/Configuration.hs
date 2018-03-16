@@ -1,18 +1,19 @@
-{-# LANGUAGE GADTs                #-}
+{-# LANGUAGE GADTs #-}
 module Lina.AttackTree.Configuration where
 
 import Data.Semiring 
 
 data Conf attribute = (Ord attribute) => Conf {
-      andOp :: attribute -> attribute -> attribute,
-      seqOp :: attribute -> attribute -> attribute
+  orOp  :: attribute -> attribute -> attribute,
+  andOp :: attribute -> attribute -> attribute,
+  seqOp :: attribute -> attribute -> attribute
 }
 
-addMulConf :: (Ord a,Semiring a) => Conf a
-addMulConf = Conf (.+.) (.*.)
+maxAddMulConf :: (Ord a,Semiring a) => Conf a
+maxAddMulConf = Conf max (.+.) (.*.)
 
-maxMaxConf :: (Ord a,Semiring a) => Conf a
-maxMaxConf = Conf max max
+minMaxMaxConf :: (Ord a,Semiring a) => Conf a
+minMaxMaxConf = Conf min max max
 
-maxAddConf :: (Ord a,Semiring a) => Conf a
-maxAddConf = Conf max (.+.)
+minMaxAddConf :: (Ord a,Semiring a) => Conf a
+minMaxAddConf = Conf min max (.+.)

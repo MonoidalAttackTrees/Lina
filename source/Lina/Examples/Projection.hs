@@ -37,13 +37,13 @@ at2 :: Conf Integer -> AttackTree Integer String
 at2 conf = start_AT conf (insert pat2)
 
 ex1 :: AttackTree Integer String
-ex1 = start_AT addMulConf $
+ex1 = start_AT maxAddMulConf $
   or_node "or node"
     (base_wa 1 "base 1")
     (base_wa 2 "base 2")
 
 ex2 :: AttackTree Integer String
-ex2 = start_AT addMulConf $
+ex2 = start_AT maxAddMulConf $
   or_node "or node"
     (base_wa 1 "base 3")
     (base_wa 2 "base 4")
@@ -67,7 +67,7 @@ vehicle_attack = start_PAT $
           (base_wa 0.1 "install malware")))
 
 vehicle_AT :: AttackTree Double String
-vehicle_AT = AttackTree vehicle_attack maxMaxConf
+vehicle_AT = AttackTree vehicle_attack minMaxMaxConf
 
 -- Autonomous Vehicle Attack: Composed
 se_attack :: APAttackTree Double String
@@ -107,5 +107,4 @@ vehicle_attack' = start_PAT $
     (insert on_attack)
 
 vehicle_AT' :: AttackTree Double String
-vehicle_AT' = AttackTree vehicle_attack maxMaxConf
-
+vehicle_AT' = AttackTree vehicle_attack minMaxMaxConf
