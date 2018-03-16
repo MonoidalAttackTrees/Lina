@@ -49,3 +49,63 @@ ex2 = start_AT addMulConf $
     (base_wa 2 "base 4")
 
     
+-- Autonomous Vehicle Attack
+vehicle_attack :: APAttackTree Double String
+vehicle_attack = start_PAT $
+  or_node "Autonomous Vehicle Attack"
+    (seq_node "external sensor attack"
+       (base_wa 0.2 "modify street signs to cause wreck")
+       (and_node "social engineering attack"
+          (base_wa 0.6 "pose as mechanic")
+          (base_wa 0.1 "install malware")))
+    (seq_node "over night attack"
+       (base_wa 0.05 "Find address where car is stored")
+       (seq_node "compromise vehicle"
+          (or_node "break in"
+             (base_wa 0.8 "break window")
+             (base_wa 0.5 "disable door alarm/locks"))
+          (base_wa 0.1 "install malware")))
+
+vehicle_AT :: AttackTree Double String
+vehicle_AT = AttackTree vehicle_attack maxMaxConf
+
+-- Autonomous Vehicle Attack: Composed
+se_attack :: APAttackTree Double String
+se_attack = start_PAT $
+  and_node "social engineering attack"
+     (base_wa 0.6 "pose as mechanic")
+     (base_wa 0.1 "install malware")
+
+bi_attack :: APAttackTree Double String
+bi_attack = start_PAT $
+  or_node "break in"
+     (base_wa 0.8 "break window")
+     (base_wa 0.5 "disable door alarm/locks")
+
+cv_attack :: APAttackTree Double String
+cv_attack = start_PAT $
+  seq_node "compromise vehicle"
+    (insert bi_attack)
+    (base_wa 0.1 "install malware")
+
+es_attack :: APAttackTree Double String
+es_attack = start_PAT $
+  seq_node "external sensor attack"
+       (base_wa 0.2 "modify street signs to cause wreck")
+       (insert se_attack)
+
+on_attack :: APAttackTree Double String
+on_attack = start_PAT $
+  seq_node "over night attack"
+     (base_wa 0.05 "Find address where car is stored")
+     (insert cv_attack)
+
+vehicle_attack' :: APAttackTree Double String
+vehicle_attack' = start_PAT $
+  or_node "Autonomous Vehicle Attack"
+    (insert es_attack)
+    (insert on_attack)
+
+vehicle_AT' :: AttackTree Double String
+vehicle_AT' = AttackTree vehicle_attack maxMaxConf
+

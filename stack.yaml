@@ -42,7 +42,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - git: git@github.com:heades/maude-hs.git
-  commit: 60dc510f6998fb2a519dae321f8cedaaf39c8a11
+  commit: 0ff68e133ac7a6584647bd689f21d333879dc23c
 - semiring-simple-0.2.1.0
 - filepath-1.4.2
 
