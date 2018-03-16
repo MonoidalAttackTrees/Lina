@@ -9,7 +9,7 @@ Before showing off some of the features of Lina the reader might be wondering, w
 
 First, it is quite easy to see that a programming language for specifying models is needed, because largely, in practice the models are defined in a pseudo-scripting fashion, and so it begs the question, why are we the first ones to do this?
 
-Second, As security researchers and practitioners it is fair to say that we consider correctness to be of the utmost importance, and thus, by embedding Lina in Haskell we get to absorb all of its features, and hence, its higher degree of confidence when thinking about correctness.  Haskell is a statically-typed functional programming language whose advanced typing features can be exploited by Lina to offer a higher degree of confidence to the programmer that other languages cannot.  In addition, we can take advantage of cutting edge verification techniques like property based testing using QuickCheck as well as refinement types in Liquid Haskell.
+Second, as security researchers and practitioners it is fair to say that we consider correctness to be of the utmost importance, and thus, by embedding Lina in Haskell we get to absorb all of its features, and hence, its higher degree of confidence when thinking about correctness.  Haskell is a statically-typed functional programming language whose advanced typing features can be exploited by Lina to offer a higher degree of confidence to the programmer that other languages cannot.  In addition, we can take advantage of cutting edge verification techniques like property based testing using QuickCheck as well as refinement types in Liquid Haskell.
 
 Third, as a programming language we can easily target multiple different automated reasoning tools at once, and easily extend to others.  For example, we currently support using Maude specifications to prove properties between attack trees; see below.
 
@@ -51,10 +51,11 @@ The previous example can then be turned into a full attack tree as follows:
 at :: Conf Integer -> AttackTree Integer String
 at conf = start_AT conf (insert pat1)
 ```
-The attack tree `at` is parameterized by a configuration which specifies how the attibutes on AND-nodes and SEQ-nodes should be computed.  Configurations have the following definition:
+The attack tree `at` is parameterized by a configuration which specifies how the attibutes on OR-nodes, AND-nodes, and SEQ-nodes should be computed.  Configurations have the following definition:
 
 ```.(haskell)
 data Conf attribute = Ord attribute => Conf {
+      orOp  :: attribute -> attribute -> attribute,
       andOp :: attribute -> attribute -> attribute,
       seqOp :: attribute -> attribute -> attribute
 }
@@ -62,10 +63,10 @@ data Conf attribute = Ord attribute => Conf {
 Then we can specify an example configuration as follows:
 
 ```.(haskell)
-addMulConf :: (Ord a,Semiring a) => Conf a
-addMulConf = Conf (.+.) (.*.)
+minAddMulConf :: (Ord a,Semiring a) => Conf a
+minAddMulConf = Conf min (.+.) (.*.)
 ```
-Now if we apply `at` to `addMulConf`, as in `at addMulConf` we obtain an attack tree whose AND-nodes will be assigned the attribute that is computed by taking the sum of its children, and whose SEQ-nodes will be assigned the attribute that is computed by taking the product of its children.
+Now if we apply `at` to `addMulConf`, as in `at addMulConf`, we obtain an attack tree whose OR-nodes will be assigned the minimum attribute between its children, AND-nodes will be assigned the attribute that is computed by taking the sum of its children, and whose SEQ-nodes will be assigned the attribute that is computed by taking the product of its children.
 
 Configurations make it possible to define the basic structure of an attack tree, and then be able to conduct several different types of analysis by inserting different configurations.  In addition, configurations and all of our different notions of attack trees are completely abstract, meaning, the labels and attributes can be any data type as long as the labels are comparable and the attribute type forms a semiring.  This makes Lina one of the most flexible threat analysis tools in existence.
 
