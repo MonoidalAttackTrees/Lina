@@ -12,6 +12,7 @@ module Lina.AttackTree (
    start_AT,
    insert,
    base,
+   apa2pa,
    no_attr,
    attr,
    base_wa,
@@ -62,6 +63,9 @@ data AttackTree attribute label = AttackTree {
       ap_tree :: APAttackTree attribute label,
       configuration :: Conf attribute
 }
+
+apa2pa :: APAttackTree attribute label -> PAttackTree label
+apa2pa (APAttackTree ptree labels _) = APAttackTree ptree labels (M.empty)
 
 showNode :: (Ord label,Show label)
          => Int

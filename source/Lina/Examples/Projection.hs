@@ -1,6 +1,7 @@
 module Lina.Examples.Projection where
 
 import Lina.AttackTree
+import Lina.Maude.Causal
 
 pat1 :: APAttackTree Integer String
 pat1 = start_PAT $
@@ -47,7 +48,6 @@ ex2 = start_AT maxAddMulConf $
   or_node "or node"
     (base_wa 1 "base 3")
     (base_wa 2 "base 4")
-
     
 -- Autonomous Vehicle Attack
 vehicle_attack :: APAttackTree Double String
