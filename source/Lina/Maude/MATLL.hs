@@ -43,7 +43,7 @@ toMATLL_PAT :: PAttackTree label -> String
 toMATLL_PAT (APAttackTree at _ _) = toMATLL' at
 
 -- TODO: Factor out finding the max.
-reID_node :: Ord label => (ID -> IAT -> IAT -> IAT) -> ID -> IAT -> IAT -> ST.State (B.Bimap label ID,B.Bimap label ID) (Either Error IAT)
+reID_node :: (Show label,Ord label) => (ID -> IAT -> IAT -> IAT) -> ID -> IAT -> IAT -> ST.State (B.Bimap label ID,B.Bimap label ID) (Either Error IAT)
 reID_node node id l r = do
   (labels1,labels2) <- ST.get
   let (max_id,_) = B.findMaxR labels1
@@ -54,20 +54,20 @@ reID_node node id l r = do
     (Left e,_) -> return $ throwError e
     (_,Left e) -> return $ throwError e
   
-reID' :: Ord label => IAT -> ST.State (B.Bimap label ID,B.Bimap label ID) (Either Error IAT)
+reID' :: (Show label,Ord label) => IAT -> ST.State (B.Bimap label ID,B.Bimap label ID) (Either Error IAT)
 reID' (Base id) = do
   (labels1,labels2) <- ST.get
   case B.lookupR id labels2 of
     Just label -> do
       case B.lookup label labels1 of
         Just id' -> return.return $ Base id'
-        Nothing -> return.throwError $ IDNotFound "reID'" 
+        Nothing -> return.throwError $ IDNotFound "reID'" (show label)
     Nothing -> return.throwError $ LabelNotFound "reID'" id
 reID' (OR  id l r) = reID_node OR id l r
 reID' (AND id l r) = reID_node AND id l r
 reID' (SEQ id l r) = reID_node SEQ id l r
 
-reID :: Ord label => PAttackTree label -> PAttackTree label -> Either Error IAT
+reID :: (Show label,Ord label) => PAttackTree label -> PAttackTree label -> Either Error IAT
 reID (APAttackTree _ labels1 _) (APAttackTree t2 labels2 _) = ST.evalState (reID' t2) (labels1,labels2) 
 
 rw_maude :: String -> String -> IO Bool
@@ -78,7 +78,7 @@ rw_maude p q = do
  where
    cms = "=>+ "++q
 
-rw :: Ord label => PAttackTree label -> PAttackTree label -> IO (Either Error Bool)
+rw :: (Show label,Ord label) => PAttackTree label -> PAttackTree label -> IO (Either Error Bool)
 rw p q = do  
   case reID p q of
     Right q' -> do
@@ -88,7 +88,7 @@ rw p q = do
       return.return $ o
     Left e -> return $ throwError e
 
-is_specialization :: Ord label
+is_specialization :: (Show label,Ord label)
                   => PAttackTree label
                   -> PAttackTree label
                   -> IO ()
@@ -98,7 +98,7 @@ is_specialization p q = do
     Right b -> show b
     Left e -> show e
 
-eq_PAT :: Ord label => PAttackTree label -> PAttackTree label -> IO ()
+eq_PAT :: (Show label,Ord label) => PAttackTree label -> PAttackTree label -> IO ()
 eq_PAT p q = do
   m1 <- p `rw` q
   m2 <- q `rw` p
