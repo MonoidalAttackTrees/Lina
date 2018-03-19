@@ -88,11 +88,11 @@ rw p q = do
       return.return $ o
     Left e -> return $ throwError e
 
-rw_PAT :: Ord label
-       => PAttackTree label
-       -> PAttackTree label
-       -> IO ()
-rw_PAT p q = do
+is_specialization :: Ord label
+                  => PAttackTree label
+                  -> PAttackTree label
+                  -> IO ()
+is_specialization p q = do
   m <- p `rw` q
   putStrLn $ case m of
     Right b -> show b

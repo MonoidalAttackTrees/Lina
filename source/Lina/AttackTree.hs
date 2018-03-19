@@ -21,6 +21,7 @@ module Lina.AttackTree (
    or_node,
    seq_node,
    eval,
+   (<@>),
    get_attacks,
    min_attacks,
    max_attacks,
@@ -298,6 +299,17 @@ eval (AttackTree (APAttackTree at labels attributes) conf) =
     Right (_,(attributes',labels')) ->  return $ AttackTree (APAttackTree at labels' attributes') conf
     Left e -> throwError e
 
+(<@>) :: (Ord label, Show label)
+      => AttackTree attribute label
+      -> label
+      -> Either Error attribute
+(AttackTree (APAttackTree _ labels attributes) _) <@> l =
+  case B.lookup l labels of
+    Just id -> case M.lookup id attributes of
+                 Just at -> return at
+                 Nothing -> throwError $ LabelNotFound "eval" id
+    Nothing -> throwError $ IDNotFound "eval" (show l)
+
 data IAttack where
   BaseA :: ID -> IAttack
   ANDA  :: ID -> IAttack -> IAttack -> IAttack
@@ -481,3 +493,4 @@ max_attacks :: (Ord label,Ord attribute)
             => [Attack attribute label]
             -> [Attack attribute label]
 max_attacks attacks = maximums attacks
+
