@@ -25,6 +25,7 @@ library
         Lina.Examples.ATM,          
         Lina.Examples.Simple,
         Lina.Examples.Projection,
+        Lina.Examples.Specializations,                  
         Lina.Maude.Module,
         Lina.Maude.Causal
         Lina.Maude.MATLL          

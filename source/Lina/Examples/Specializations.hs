@@ -1,4 +1,4 @@
-module Specializations where
+module Lina.Examples.Specializations where
 
 import Lina.AttackTree
 import Lina.Maude.MATLL
