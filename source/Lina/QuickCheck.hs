@@ -1,0 +1,2 @@
+module Lina.QuickCheck where
+
