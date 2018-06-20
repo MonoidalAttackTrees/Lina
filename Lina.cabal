@@ -20,6 +20,7 @@ library
   exposed-modules:
         Lina.Utils,
         Lina.Error,
+        Lina.QuickCheck,
         Lina.AttackTree,
         Lina.AttackTree.Configuration,
         Lina.Examples.ATM,          
