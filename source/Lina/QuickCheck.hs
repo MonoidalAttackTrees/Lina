@@ -2,7 +2,7 @@ module Lina.QuickCheck where
 
 import Test.QuickCheck
 
-data BinTree b = EmptyTree | Node b (BinTree b) (BinTree b)
+data BinTree a = EmptyTree | Node a (BinTree a) (BinTree a)
   deriving (Show, Read, Eq)
 
 singleInsert :: a -> BinTree a
@@ -15,9 +15,14 @@ treeInsert x (Node a left right)
   | x < a = Node a (treeInsert x left) right
   | x > a = Node a left (treeInsert x right)
 
-instance (Ord a, Bounded a, Random a, Num a, Arbitrary a) => Arbitrary (BinTree a) where
-  arbitrary = gen 0 100 where
-    gen :: (Ord a, Num a, Random a) => a -> a -> Gen (BinTree a)
-    gen min max | (max - min) <= 3 = return EmptryTree
-    gen min max = do
-      
+instance Arbitrary a => Arbitrary (BinTree a) where
+  arbitrary = sized arbitrarySizedTree
+
+arbitrarySizedTree :: Arbitrary a => Int -> Gen (BinTree a)
+arbitrarySizedTree m = do
+  t <- arbitrary
+  n <- choose (0, m `div` 2)
+  ts <- vectorOf n (arbitrarySizedTree (m `div` 4))
+  return (BinTree t ts)
+  
+  
