@@ -26,3 +26,4 @@ arbitrarySizedTree m = do
   return (BinTree t ts)
   
   
+--Testing Slack
