@@ -16,7 +16,12 @@ treeInsert x (Node a left right)
   | x > a = Node a left (treeInsert x right)
 
 instance Arbitrary a => Arbitrary (BinTree a) where
-  arbitrary = sized arbitrarySizedTree
+  arbitrary = do
+    t <- arbitrary
+    ts <- arbitrary
+    return (BinTree t ts)
+
+ {- arbitrary = sized arbitrarySizedTree
 
 arbitrarySizedTree :: Arbitrary a => Int -> Gen (BinTree a)
 arbitrarySizedTree m = do
@@ -24,6 +29,8 @@ arbitrarySizedTree m = do
   n <- choose (0, m `div` 2)
   ts <- vectorOf n (arbitrarySizedTree (m `div` 4))
   return (BinTree t ts)
+-}  
   
-  
+
+-- TEST TEST TEST
 --Testing Slack
