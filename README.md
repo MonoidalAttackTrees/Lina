@@ -140,5 +140,4 @@ Please follow the following directions:
 References
 ----------
 
-[1] [Semantics for specialising attack trees based on linear logic](http://orbilu.uni.lu/handle/10993/34365)test
-test
+[1] [Semantics for specialising attack trees based on linear logic](http://orbilu.uni.lu/handle/10993/34365)
