@@ -4,6 +4,8 @@ import Lina.AttackTree
 import qualified Lina.Maude.Causal as C
 import qualified Lina.Maude.MATLL  as M
 
+-- Need to check on the problem with eq_PAT
+
 atm1 :: PAttackTree String
 atm1 = start_PAT $
   seq_node "ATM attack"
