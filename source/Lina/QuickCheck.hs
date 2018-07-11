@@ -20,11 +20,14 @@ instance Arbitrary a => Arbitrary (BinTree a) where
   arbitrary =
     sized arbitrarySizedTree
 
-arbitrarySizedTree :: Arbitrary a => Int -> Gen (BinTree a)
+--It won't match type 'a' with 'Int'
+--Expects type: Gen (BinTree a)
+--Getting type: Gen (BinTree Int)
+--I think it has something to do with the selection of 'b' in 'arbitrarySizedTree' but I'm not sure how to fix it
+
+arbitrarySizedTree :: Arbitrary a => a -> Gen (BinTree a)
 arbitrarySizedTree m = do
-  t <- arbitrary
   b <- choose (0, m `div` 2)
-  c <- choose (0, m `div` 2)
-  x <- arbitrarySizedTree b
-  y <- arbitrarySizedTree c
-  return (Node t (x)(y))
+  if b == 0 then return EmptyTree
+  else if b == 1 then return (Node m (EmptyTree)(EmptyTree))
+  else return (Node m (Gen (BinTree b))(Gen (BinTree b)))
