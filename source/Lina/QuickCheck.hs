@@ -18,7 +18,7 @@ treeInsert x (Node a left right)
 
 instance Arbitrary a => Arbitrary (BinTree a) where
   arbitrary =
-    sized arbitrarySizedTree
+    sized arbitrarySizedTree 
 
 --It won't match type 'a' with 'Int'
 --Expects type: Gen (BinTree a)
@@ -27,7 +27,8 @@ instance Arbitrary a => Arbitrary (BinTree a) where
 
 arbitrarySizedTree :: Arbitrary a => a -> Gen (BinTree a)
 arbitrarySizedTree m = do
+  d <- arbitrary
   b <- choose (0, m `div` 2)
   if b == 0 then return EmptyTree
   else if b == 1 then return (Node m (EmptyTree)(EmptyTree))
-  else return (Node m (Gen (BinTree b))(Gen (BinTree b)))
+  else return (Node d (BinTree b)(BinTree b))
