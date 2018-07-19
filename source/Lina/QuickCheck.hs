@@ -25,6 +25,7 @@ instance Arbitrary a => Arbitrary (BinTree a) where
 --I think it has something to do with the selection of 'b' in 'arbitrarySizedTree' but I'm not sure how to fix it
 
 arbitrarySizedTree :: Arbitrary a => Int -> Gen (BinTree a)
+arbitrarySizedTree 0 = return EmptyTree
 arbitrarySizedTree m = do 
   undefined
   -- b <- choose (0, m `div` 2)
