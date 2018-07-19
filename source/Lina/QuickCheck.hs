@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Lina.QuickCheck where
 
 import Test.QuickCheck
@@ -16,7 +17,7 @@ treeInsert x (Node a left right)
   | x < a = Node a (treeInsert x left) right
   | x > a = Node a left (treeInsert x right)
 
-instance Arbitrary a => Arbitrary (BinTree a) where
+instance Arbitrary (BinTree Int) where
   arbitrary = sized arbitrarySizedTree 
 
 --It won't match type 'a' with 'Int'
@@ -24,8 +25,11 @@ instance Arbitrary a => Arbitrary (BinTree a) where
 --Getting type: Gen (BinTree Int)
 --I think it has something to do with the selection of 'b' in 'arbitrarySizedTree' but I'm not sure how to fix it
 
-arbitrarySizedTree :: Arbitrary a => Int -> Gen (BinTree a)
+arbitrarySizedTree :: Int -> Gen (BinTree Int)
 arbitrarySizedTree 0 = return EmptyTree
+arbitrarySizedTree 1 = do
+  d <- arbitrary :: Gen Int
+  return $ Node d EmptyTree EmptyTree
 arbitrarySizedTree m = do 
   undefined
   -- b <- choose (0, m `div` 2)
