@@ -17,18 +17,18 @@ treeInsert x (Node a left right)
   | x > a = Node a left (treeInsert x right)
 
 instance Arbitrary a => Arbitrary (BinTree a) where
-  arbitrary =
-    sized arbitrarySizedTree 
+  arbitrary = sized arbitrarySizedTree 
 
 --It won't match type 'a' with 'Int'
 --Expects type: Gen (BinTree a)
 --Getting type: Gen (BinTree Int)
 --I think it has something to do with the selection of 'b' in 'arbitrarySizedTree' but I'm not sure how to fix it
 
-arbitrarySizedTree :: Arbitrary a => a -> Gen (BinTree a)
-arbitrarySizedTree m = do
-  d <- arbitrary
-  b <- choose (0, m `div` 2)
-  if b == 0 then return EmptyTree
-  else if b == 1 then return (Node m (EmptyTree)(EmptyTree))
-  else return (Node d (BinTree b)(BinTree b))
+arbitrarySizedTree :: Arbitrary a => Int -> Gen (BinTree a)
+arbitrarySizedTree m = do 
+  undefined
+  -- b <- choose (0, m `div` 2)
+  -- if b == 0 then return EmptyTree
+  -- else if b == 1 then return (Node m (EmptyTree)(EmptyTree))
+  -- else _
+           
