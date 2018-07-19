@@ -31,9 +31,11 @@ arbitrarySizedTree 1 = do
   d <- arbitrary :: Gen Int
   return $ Node d EmptyTree EmptyTree
 arbitrarySizedTree m = do 
-  undefined
-  -- b <- choose (0, m `div` 2)
-  -- if b == 0 then return EmptyTree
-  -- else if b == 1 then return (Node m (EmptyTree)(EmptyTree))
-  -- else _
+     b <- choose (0, m `div` 2)
+     if b == 0 then return EmptyTree
+     else if b == 1 then return (Node m (EmptyTree)(EmptyTree))
+     else do r1 <- arbitrarySizedTree (m-1)
+             r2 <- arbitrarySizedTree (m-1)
+             undefined
+
            
