@@ -20,11 +20,6 @@ treeInsert x (Node a left right)
 instance Arbitrary (BinTree Int) where
   arbitrary = sized arbitrarySizedTree 
 
---It won't match type 'a' with 'Int'
---Expects type: Gen (BinTree a)
---Getting type: Gen (BinTree Int)
---I think it has something to do with the selection of 'b' in 'arbitrarySizedTree' but I'm not sure how to fix it
-
 arbitrarySizedTree :: Int -> Gen (BinTree Int)
 arbitrarySizedTree 0 = return EmptyTree
 arbitrarySizedTree 1 = do
@@ -32,8 +27,10 @@ arbitrarySizedTree 1 = do
   return $ Node d EmptyTree EmptyTree
 arbitrarySizedTree m = do 
   b <- arbitrary :: Gen Int
-  r1 <- arbitrarySizedTree (m-1)
-  r2 <- arbitrarySizedTree (m-1)
-  return $ Node b r1 r2
+  left <- choose(0, m-1)
+  right <- choose(0, m-1)
+  leftBranch <- arbitrarySizedTree (left)
+  rightBranch <- arbitrarySizedTree (right)
+  return $ Node b leftBranch rightBranch
   
 
