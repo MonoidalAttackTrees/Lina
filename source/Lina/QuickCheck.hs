@@ -28,9 +28,8 @@ arbitrarySizedTree 1 = do
 arbitrarySizedTree m = do 
   b <- arbitrary :: Gen Int
   left <- choose(0, m-1)
-  right <- choose(0, m-1)
   leftBranch <- arbitrarySizedTree (left)
-  rightBranch <- arbitrarySizedTree (right)
+  rightBranch <- arbitrarySizedTree ((m-1)-left)
   return $ Node b leftBranch rightBranch
   
 
