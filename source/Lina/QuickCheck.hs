@@ -16,12 +16,11 @@ showBT x = do
   
 createGraph :: Gen (BinTree Int) -> [(Int,Int)]
 createGraph a = do
-  root <- Node root _ _
-  return root
-  
+  return (1,2)
+  -- root <- Node x _ _
   -- left <- Node _ y _
   -- right <- Node _ _ z
-  -- if left == EmptyTree && right == EmptyTree then return
+  -- if left == EmptyTree && right == EmptyTree then return edgesList
   -- else if left == EmptyTree && right != EmptyTree then edgesList ++ [(root,right)]
   --   createGraph right
   -- else if right == EmptyTree && left != EmptyTree then edgesList ++ [(root,left)]
