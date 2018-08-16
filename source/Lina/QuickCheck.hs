@@ -5,7 +5,7 @@ module Lina.QuickCheck where
 import Test.QuickCheck
 import System.Random
 
-data BinTree a = EmptyTree
+data BinTree a = Leaf a
                | Node  a (BinTree a) (BinTree a)
                | NodeB a (BinTree a) (BinTree a)
   deriving (Show, Read, Eq)
@@ -13,10 +13,37 @@ data BinTree a = EmptyTree
 showBT :: Gen (BinTree Int) -> String
 showBT x = do
   undefined
+
+getData :: BinTree Int -> Int
+getData (Leaf d) = d
+getData (Node d _ _) = d
+getData (NodeB d _ _) = d
+
+createGraph :: BinTree Int -> [(Int,Int)]
+createGraph (Leaf d)      = []
+createGraph (Node d l r)  =
+  [(d,el),(d,er)] ++ lEdges ++ rEdges
+ where
+   el = getData l
+   er = getData r
+   lEdges = createGraph l
+   rEdges = createGraph r
+   
+createGraph (NodeB d l r)  =
+  [(d,el),(d,er)] ++ lEdges ++ rEdges
+ where
+   el = getData l
+   er = getData r
+   lEdges = createGraph l
+   rEdges = createGraph r
   
-createGraph :: Gen (BinTree Int) -> [(Int,Int)]
-createGraph a = do
-  return (1,2)
+createGraphGen :: Gen (BinTree Int) -> Gen [(Int,Int)]
+createGraphGen = fmap createGraph
+
+{-
+
+  -- do
+  -- return (1,2)
   -- root <- Node x _ _
   -- left <- Node _ y _
   -- right <- Node _ _ z
@@ -57,3 +84,4 @@ ranNode op m = do
   rightBranch <- arbitrarySizedTree $ (m-1)-left
   return $ op b leftBranch rightBranch
 
+-}
