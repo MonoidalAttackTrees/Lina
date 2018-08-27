@@ -15,6 +15,9 @@ showBT :: Gen (BinTree Int) -> String
 showBT x = do
   undefined
 
+showTree :: [(Int, Int)] -> FilePath
+showTree a = mkImage Dot Jpeg 0.23 0.3 2 $ createGraph a "BinTree.jpeg"
+
 getData :: BinTree Int -> Int
 getData (Leaf d) = d
 getData (Node d _ _) = d
