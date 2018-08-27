@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Lina.QuickCheck where
 
---import graphy
+import Data.GraphViz
+import Lina.Graphy
 import Test.QuickCheck
 import System.Random
 
@@ -40,27 +41,6 @@ createGraph (NodeB d l r)  =
 createGraphGen :: Gen (BinTree Int) -> Gen [(Int,Int)]
 createGraphGen = fmap createGraph
 
-{-
-
-  -- do
-  -- return (1,2)
-  -- root <- Node x _ _
-  -- left <- Node _ y _
-  -- right <- Node _ _ z
-  -- if left == EmptyTree && right == EmptyTree then return edgesList
-  -- else if left == EmptyTree && right != EmptyTree then edgesList ++ [(root,right)]
-  --   createGraph right
-  -- else if right == EmptyTree && left != EmptyTree then edgesList ++ [(root,left)]
-  --   createGraph left
-  -- else edgesList ++ [(root,left)]
-  --   edgesList ++ [(root,right)]
-  --   createGraph left
-  --   createGraph right
-
-
---instance Show (BinTree a) where
-  --show = showBT
-
 instance Arbitrary (BinTree Int) where
   arbitrary = sized arbitrarySizedTree 
 
@@ -83,5 +63,3 @@ ranNode op m = do
   leftBranch <- arbitrarySizedTree left
   rightBranch <- arbitrarySizedTree $ (m-1)-left
   return $ op b leftBranch rightBranch
-
--}
