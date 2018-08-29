@@ -64,3 +64,4 @@ ranNode op m = do
   leftBranch <- arbitrarySizedTree left
   rightBranch <- arbitrarySizedTree $ (m-1)-left
   return $ op b leftBranch rightBranch
+
