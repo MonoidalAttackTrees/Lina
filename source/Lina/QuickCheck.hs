@@ -17,8 +17,11 @@ showBT x = do
 gr :: Graph Int Char
 gr = [(1,2,'a'),(2,3,'a')]
 
-showTree :: BinTree Int -> IO FilePath
-showTree a = mkImage Dot Png 0.23 0.3 2 (createGraph a)  "BinTree.png"
+showTree :: Int -> IO FilePath
+showTree a = do
+  t <- generate $ arbitrarySizedTree a
+  error.show $ t
+  mkImage Dot Png 0.23 0.3 2 (createGraph t)  "BinTree.png"
 
 fakeTree :: BinTree Int
 fakeTree = Node 6 ( Leaf 5 ) (Leaf 4)
