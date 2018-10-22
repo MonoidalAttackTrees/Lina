@@ -56,7 +56,7 @@ mkDotGraph :: (Ord e, Labellable n, Labellable e)
 mkDotGraph nodeSize nodeSep edgeLDist = setDirectedness graphToDot params
  where
    params :: (Labellable n, Labellable e) => GraphvizParams I.Node n e () n
-   params = blankParams { isDirected = False
+   params = blankParams { isDirected = True
                         , globalAttributes = [EdgeAttrs [edgeEnds NoDir,
                                                         LabelDistance edgeLDist],
                                               NodeAttrs [shape Circle,

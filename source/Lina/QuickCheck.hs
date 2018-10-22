@@ -14,8 +14,11 @@ showBT :: Gen (BinTree Int) -> String
 showBT x = do
   undefined
 
+gr :: Graph Int Char
+gr = [(1,2,'a'),(2,3,'a')]
+
 showTree :: BinTree Int -> IO FilePath
-showTree a = mkImage Dot Jpeg 0.23 0.3 2 (createGraph a)  "~/BinTree.jpeg"
+showTree a = mkImage Dot Png 0.23 0.3 2 (createGraph a)  "BinTree.png"
 
 fakeTree :: BinTree Int
 fakeTree = Node 6 ( Leaf 5 ) (Leaf 4)
